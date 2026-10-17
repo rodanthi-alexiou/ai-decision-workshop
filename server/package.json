@@ -1,0 +1,28 @@
+{
+  "name": "@decision-room/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test src/*.test.ts",
+    "agent:register": "tsx src/register-agent.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@azure/ai-projects": "^2.1.1",
+    "@azure/identity": "^4.13.0",
+    "@fastify/cors": "^11.2.0",
+    "@fastify/static": "^10.1.5",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.8.2",
+    "the-decision-room": "file:.."
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "tsx": "^4.21.0",
+    "typescript": "~6.0.2"
+  }
+}

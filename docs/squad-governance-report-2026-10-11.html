@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squad Governance Report — ai-decision-workshop — 2026-10-11</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+    }
+    header {
+      color: var(--cp-accent-fg);
+      background: linear-gradient(135deg, var(--cp-accent-hover), var(--cp-accent));
+      padding: 3rem 1.25rem 2.5rem;
+      border-bottom: 1px solid var(--cp-border);
+    }
+    .header-inner, .container, footer {
+      width: min(1200px, calc(100% - 2.5rem));
+      margin: 0 auto;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+    .subtitle {
+      margin: 0.75rem 0 1.75rem;
+      opacity: 0.84;
+      font-size: 1rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    .stat {
+      padding: 0.9rem 0.75rem;
+      border: 1px solid var(--cp-sheen);
+      border-radius: 0.625rem;
+      background: var(--cp-highlight);
+      min-width: 0;
+    }
+    .stat strong {
+      display: block;
+      color: var(--cp-accent-fg);
+      font-size: clamp(1.3rem, 2.8vw, 2rem);
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    .stat span {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      opacity: 0.72;
+    }
+    .container { padding: 2rem 0 3rem; }
+    section {
+      margin: 0 0 1.5rem;
+      padding: 1.5rem;
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+      box-shadow: 0 0 2px var(--cp-border), 0 1px 2px var(--cp-border);
+    }
+    h2 {
+      margin: 0 0 1.35rem;
+      font-size: 1.45rem;
+      line-height: 1.25;
+    }
+    h2::after {
+      content: "";
+      display: block;
+      width: 7rem;
+      height: 3px;
+      margin-top: 0.6rem;
+      border-radius: 0.625rem;
+      background: linear-gradient(90deg, var(--cp-accent), var(--cp-warning));
+    }
+    h3 { margin: 1.5rem 0 0.75rem; font-size: 1.05rem; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+    .card {
+      min-height: 126px;
+      padding: 1rem;
+      background: var(--cp-bg-elevated);
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+    }
+    .card-label {
+      color: var(--cp-text-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .card-value {
+      margin: 0.4rem 0 0.55rem;
+      font-size: 1.9rem;
+      font-weight: 750;
+      line-height: 1;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      background: var(--cp-surface-soft);
+      color: var(--cp-text-muted);
+      border: 1px solid var(--cp-border);
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+    .badge.success { color: var(--cp-success); background: var(--cp-bg-elevated); border-color: var(--cp-success); }
+    .badge.warning { color: var(--cp-warning); background: var(--cp-bg-elevated); border-color: var(--cp-warning); }
+    .badge.danger { color: var(--cp-danger); background: var(--cp-bg-elevated); border-color: var(--cp-danger); }
+    .badge.info { color: var(--cp-link); background: var(--cp-bg-elevated); border-color: var(--cp-link); }
+    .badge.role { color: var(--cp-accent); background: var(--cp-accent-soft); border-color: var(--cp-accent); }
+    .badge.role.researcher { color: var(--cp-link); border-color: var(--cp-link); background: var(--cp-bg-elevated); }
+    .badge.role.lead { color: var(--cp-success); border-color: var(--cp-success); background: var(--cp-bg-elevated); }
+    .badge.role.designer { color: var(--cp-accent); border-color: var(--cp-accent); background: var(--cp-accent-soft); }
+    .badge.role.scribe { color: var(--cp-text-muted); border-color: var(--cp-border-strong); background: var(--cp-surface-soft); }
+    .empty {
+      padding: 2rem 1rem;
+      text-align: center;
+      color: var(--cp-text-muted);
+      font-style: italic;
+      background: var(--cp-surface-soft);
+      border: 1px dashed var(--cp-border-strong);
+      border-radius: 0.625rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td {
+      padding: 0.75rem 0.7rem;
+      border-bottom: 1px solid var(--cp-border);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--cp-text-muted);
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--cp-surface-soft);
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    .split {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
+    .bars { display: grid; gap: 0.8rem; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 7.5rem 1fr 4.8rem;
+      gap: 0.7rem;
+      align-items: center;
+      font-size: 0.86rem;
+    }
+    .bar-track {
+      height: 0.8rem;
+      border-radius: 999px;
+      background: var(--cp-surface-soft);
+      border: 1px solid var(--cp-border);
+      overflow: hidden;
+    }
+    .bar-fill { height: 100%; background: var(--cp-accent); border-radius: inherit; }
+    .bar-fill.researcher { background: var(--cp-link); }
+    .bar-fill.designer { background: var(--cp-accent); }
+    .bar-fill.lead { background: var(--cp-success); }
+    .bar-fill.orchestration { background: var(--cp-text-muted); }
+    .bar-fill.turn { background: var(--cp-warning); }
+    .bar-value { font-variant-numeric: tabular-nums; text-align: right; font-weight: 700; }
+    .note {
+      margin-top: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      color: var(--cp-text-muted);
+      background: var(--cp-surface-soft);
+      border-left: 3px solid var(--cp-warning);
+      border-radius: 0.625rem;
+      font-size: 0.86rem;
+    }
+    .summary-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin-top: 1rem;
+    }
+    .timeline {
+      position: relative;
+      margin-left: 0.45rem;
+      padding-left: 1.55rem;
+    }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 0.3rem;
+      top: 0.35rem;
+      bottom: 0.35rem;
+      width: 2px;
+      background: var(--cp-border);
+    }
+    .timeline-item {
+      position: relative;
+      padding: 0 0 1.3rem;
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-item::before {
+      content: "";
+      position: absolute;
+      left: -1.49rem;
+      top: 0.36rem;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      background: var(--cp-link);
+      border: 2px solid var(--cp-surface);
+      box-shadow: 0 0 0 1px var(--cp-link);
+    }
+    .timeline-meta { color: var(--cp-text-muted); font-size: 0.78rem; }
+    .timeline-title { margin: 0.1rem 0; font-weight: 750; }
+    .timeline-detail { color: var(--cp-text-soft); font-size: 0.9rem; }
+    .outcome-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .outcome {
+      padding: 0.9rem;
+      background: var(--cp-bg-elevated);
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      text-align: center;
+    }
+    .outcome strong { display: block; font-size: 1.45rem; color: var(--cp-link); }
+    .outcome.success strong { color: var(--cp-success); }
+    .outcome span { color: var(--cp-text-muted); font-size: 0.78rem; }
+    code {
+      font-family: Consolas, "Courier New", Courier, monospace;
+      font-size: 0.86em;
+      color: var(--cp-accent);
+    }
+    footer {
+      padding: 0 0 2.5rem;
+      color: var(--cp-text-muted);
+      font-size: 0.78rem;
+    }
+    footer p { margin: 0.35rem 0; }
+    @media (max-width: 900px) {
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .card-grid, .outcome-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .split { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .header-inner, .container, footer { width: min(100% - 1.5rem, 1200px); }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .card-grid, .outcome-grid { grid-template-columns: 1fr; }
+      section { padding: 1rem; }
+      .bar-row { grid-template-columns: 5.8rem 1fr 4.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>Squad Governance Report</h1>
+      <p class="subtitle">Single squad · Period: 2026-10-09 through 2026-10-11 (3 calendar days, UTC+03:00) · ai-decision-workshop</p>
+      <div class="stats" aria-label="Headline governance metrics">
+        <div class="stat"><strong>5</strong><span>Coordination Turns</span></div>
+        <div class="stat"><strong>8</strong><span>Role Dispatches</span></div>
+        <div class="stat"><strong>$5.3948</strong><span>Est. Cost · Uncalibrated</span></div>
+        <div class="stat"><strong>~3.40M</strong><span>Total Estimated Tokens</span></div>
+        <div class="stat"><strong>0</strong><span>Human Gates Fired</span></div>
+        <div class="stat"><strong>0</strong><span>Escalations</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h2>1. Governance Gates</h2>
+      <div class="card-grid">
+        <article class="card">
+          <div class="card-label">Council Verdicts</div>
+          <div class="card-value">0</div>
+          <span class="badge">Not activated</span>
+        </article>
+        <article class="card">
+          <div class="card-label">Intake Readiness Checks</div>
+          <div class="card-value">0</div>
+          <span class="badge">Not activated</span>
+        </article>
+        <article class="card">
+          <div class="card-label">Human Gates Passed</div>
+          <div class="card-value">0 / 0</div>
+          <span class="badge">None fired</span>
+        </article>
+        <article class="card">
+          <div class="card-label">Escalations</div>
+          <div class="card-value">0</div>
+          <span class="badge success">None</span>
+        </article>
+      </div>
+      <h3>Discovery Sessions</h3>
+      <p><span class="badge">Not activated</span> No Discovery Verdict entries were recorded. There were also no recorded discovery offers declined.</p>
+      <h3>Human Gate Log</h3>
+      <div class="empty">No Human Gate or Impactful-Action Gate events were recorded during this period.</div>
+    </section>
+
+    <section>
+      <h2>2. Council Verdicts</h2>
+      <div class="empty">No council reviews were triggered during this period. The squad operated in interactive mode with direct user approval gates.</div>
+      <div class="summary-badges">
+        <span class="badge">Go: 0</span>
+        <span class="badge">Go-With-Conditions: 0</span>
+        <span class="badge">Stop: 0</span>
+        <span class="badge">Conditions Outstanding: 0</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Cost Breakdown</h2>
+      <div class="split">
+        <div>
+          <h3>Cost by Role</h3>
+          <div class="bars" aria-label="Estimated cost by role">
+            <div class="bar-row"><span>Researcher</span><div class="bar-track"><div class="bar-fill researcher" style="width: 100%"></div></div><span class="bar-value">$2.8112</span></div>
+            <div class="bar-row"><span>Designer</span><div class="bar-track"><div class="bar-fill designer" style="width: 73.9%"></div></div><span class="bar-value">$2.0784</span></div>
+            <div class="bar-row"><span>Lead</span><div class="bar-track"><div class="bar-fill lead" style="width: 11.4%"></div></div><span class="bar-value">$0.3208</span></div>
+            <div class="bar-row"><span>Orchestration</span><div class="bar-track"><div class="bar-fill orchestration" style="width: 6.6%"></div></div><span class="bar-value">$0.1844</span></div>
+          </div>
+          <div class="note"><strong>Calibration:</strong> no reconciled runs. All turns 1–5 use estimated token blocks and the ledger's GPT-5.6 Sol rates. Treat the total as an estimate, not a calibrated actual.</div>
+        </div>
+        <div>
+          <h3>Cost by Model Tier</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Model</th><th>Role Usage</th><th>Token Share</th></tr></thead>
+              <tbody>
+                <tr><td>GPT-5.6 Sol</td><td>Researcher, Lead, Designer, Coordinator + Scribe</td><td><strong>100%</strong> (~3.40M estimated)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">The ledger separately records 235,847 host-observed tokens for the latest UX designer subagent dispatch. That partial observed figure is not substituted into the all-run estimated total.</p>
+        </div>
+      </div>
+      <h3>Per-Turn Estimated Cost Trend</h3>
+      <div class="bars" aria-label="Reproducible uncalibrated estimated cost per coordination turn">
+        <div class="bar-row"><span>Turn 1</span><div class="bar-track"><div class="bar-fill turn" style="width: 1.1%"></div></div><span class="bar-value">$0.0328</span></div>
+        <div class="bar-row"><span>Turn 2</span><div class="bar-track"><div class="bar-fill turn" style="width: 0%"></div></div><span class="bar-value">$0.0000</span></div>
+        <div class="bar-row"><span>Turn 3</span><div class="bar-track"><div class="bar-fill turn" style="width: 100%"></div></div><span class="bar-value">$2.8688</span></div>
+        <div class="bar-row"><span>Turn 4</span><div class="bar-track"><div class="bar-fill turn" style="width: 14.2%"></div></div><span class="bar-value">$0.4072</span></div>
+        <div class="bar-row"><span>Turn 5</span><div class="bar-track"><div class="bar-fill turn" style="width: 72.7%"></div></div><span class="bar-value">$2.0860</span></div>
+      </div>
+      <p class="note">Each turn value is reproducible from the history consumption blocks using the ledger's <code>priced_as</code> rates. Turn 3 combines Researcher + Scribe; Turn 4 combines Lead + Scribe; Turn 5 combines Designer + Scribe.</p>
+    </section>
+
+    <section>
+      <h2>4. Role Dispatch Activity</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Agent</th><th>Dispatches</th><th>Model</th><th>Key Activities</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge role researcher">Researcher</span></td>
+              <td>Squad Researcher</td><td>1</td><td>gpt-5.6-sol</td>
+              <td>Audited architecture, runtime flow, plan alignment, privacy, accessibility, resilience, and delivery gaps; produced prioritized research.</td>
+            </tr>
+            <tr>
+              <td><span class="badge role designer">Designer</span></td>
+              <td>UX UI Designer</td><td>1</td><td>gpt-5.6-sol</td>
+              <td>Prepared three product-studio UX architecture options and recommended Guided Product Studio while preserving the current Decision Room flow.</td>
+            </tr>
+            <tr>
+              <td><span class="badge role lead">Lead</span></td>
+              <td>Squad Lead</td><td>1</td><td>gpt-5.6-sol</td>
+              <td>Rewrote the workshop plan around one Foundry prompt agent plus independent Microsoft-Decision-1 ranking and corrected commit-before-scoring order.</td>
+            </tr>
+            <tr>
+              <td><span class="badge role scribe">Scribe</span></td>
+              <td>Squad Scribe</td><td>5</td><td>gpt-5.6-sol</td>
+              <td>Initialized the state tree, corrected ledger attribution, recorded three role dispatches, appended the architecture decision, and recomputed consumption.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="summary-badges">
+        <span class="badge info">Distinct Roles Used: 4</span>
+        <span class="badge info">Total Dispatches: 8</span>
+        <span class="badge success">Dispatch Success Rate: 100%</span>
+        <span class="badge success">Failed Dispatches: 0</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Risk &amp; Compliance</h2>
+      <div class="split">
+        <div>
+          <h3>Autonomy Tier Distribution</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tier</th><th>Dispatches</th><th>Outcome</th></tr></thead>
+              <tbody>
+                <tr><td><span class="badge success">auto</span></td><td>0 recorded</td><td>No autopilot or autonomous-loop history found.</td></tr>
+                <tr><td><span class="badge warning">confirm</span></td><td>0 recorded</td><td>Interactive mode is recorded, but dispatch-level confirmation tiers are absent.</td></tr>
+                <tr><td><span class="badge danger">gated</span></td><td>0 recorded</td><td>No human-gate-required dispatch evidence found.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <h3>Compliance Indicators</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Indicator</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Artifact evidence for dispatches</td><td><span class="badge warning">7/8 durable</span></td></tr>
+                <tr><td>Test verification on code changes</td><td><span class="badge">None required</span></td></tr>
+                <tr><td>Cost logged for dispatches</td><td><span class="badge success">✓ 8/8</span></td></tr>
+                <tr><td>Impactful actions gated</td><td><span class="badge">None required</span></td></tr>
+                <tr><td>Notifications sent</td><td><span class="badge">Disabled / none required</span></td></tr>
+                <tr><td>Open escalations</td><td><span class="badge success">✓ 0</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <p class="note">The Designer dispatch explicitly reports “No durable artifact”; its recommendation was returned in chat. No application source changes, deployments, or impactful external actions are evidenced in the scoped state.</p>
+    </section>
+
+    <section>
+      <h2>6. Activity Timeline</h2>
+      <div class="timeline">
+        <article class="timeline-item">
+          <div class="timeline-meta">2026-10-11 22:32 UTC+03:00 · Turn 5</div>
+          <div class="timeline-title">Product studio UX architecture options completed</div>
+          <div class="timeline-detail">Designer → delivered three separate-stream options and recommended Guided Product Studio; Scribe recorded the dispatch and rewrote the ledger.</div>
+        </article>
+        <article class="timeline-item">
+          <div class="timeline-meta">2026-10-11 15:05 UTC+03:00 · Turn 4</div>
+          <div class="timeline-title">Decision-1 workshop architecture adopted</div>
+          <div class="timeline-detail">Lead → rewrote the plan for a single Foundry prompt agent plus independent Decision-1 scoring; Scribe recorded the architecture decision.</div>
+        </article>
+        <article class="timeline-item">
+          <div class="timeline-meta">2026-10-11 14:20–14:30 UTC+03:00 · Turn 3</div>
+          <div class="timeline-title">Codebase architecture and gap audit completed</div>
+          <div class="timeline-detail">Researcher → found an early Phase-1 prototype and produced a prioritized readiness report; Scribe incorporated the dispatch into state and consumption.</div>
+        </article>
+        <article class="timeline-item">
+          <div class="timeline-meta">2026-10-11 14:15 UTC+03:00 · Turn 2</div>
+          <div class="timeline-title">Consumption attribution corrected</div>
+          <div class="timeline-detail">Scribe → corrected model identity casing and recalculated the ledger without changing the roster or deliverable roots.</div>
+        </article>
+        <article class="timeline-item">
+          <div class="timeline-meta">2026-10-11 14:12 UTC+03:00 · Turn 1</div>
+          <div class="timeline-title">Single squad initialized</div>
+          <div class="timeline-detail">Scribe → seeded the 13-role interactive squad state, routing, decisions, notification settings, history structure, and consumption ledger.</div>
+        </article>
+      </div>
+      <p class="note">No scoped events were recorded on 2026-10-09 or 2026-10-10. All activity in the three-day window occurred on 2026-10-11.</p>
+    </section>
+
+    <section>
+      <h2>7. Key Outcomes This Period</h2>
+      <div class="outcome-grid">
+        <div class="outcome"><strong>0</strong><span>Azure Deployments</span></div>
+        <div class="outcome"><strong>0</strong><span>GitHub Issues Created</span></div>
+        <div class="outcome"><strong>0</strong><span>Tests Recorded</span></div>
+        <div class="outcome success"><strong>12</strong><span>Unique File Paths Created/Modified</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Capability</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Interactive 13-role squad state and cost ledger</td><td>Governance foundation</td><td><span class="badge success">Complete</span></td></tr>
+            <tr><td>Evidence-grounded codebase architecture and gap audit</td><td>Research artifact</td><td><span class="badge success">Complete</span></td></tr>
+            <tr><td>Single-agent + Microsoft-Decision-1 workshop architecture</td><td>Plan and decision</td><td><span class="badge success">Complete</span></td></tr>
+            <tr><td>Guided Product Studio UX architecture recommendation</td><td>Design recommendation</td><td><span class="badge success">Complete</span></td></tr>
+            <tr><td>Decision-model integration, facilitator dashboard, fallback, export, load testing, and rate limiting</td><td>Application delivery</td><td><span class="badge info">Planned / absent</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">The file count is based on unique explicit file paths in dispatch deliverables, excluding directory-only references and the report being generated. No workshop application source code or current workshop flow was modified by this reporting task.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>Generated:</strong> 2026-10-11 · Local reporting timezone UTC+03:00 · Period filter 2026-10-09 00:00 through 2026-10-11 23:59:59 inclusive.</p>
+    <p><strong>Grounding:</strong> <code>state.json</code>, <code>decisions.md</code>, <code>consumption.md</code>, <code>notifications.md</code>, and all four files under <code>history/</code> in <code>.copilot-tracking/squad/</code>.</p>
+    <p><strong>Limitations:</strong> no Council, Discovery, Intake Readiness, human-gate, autopilot, autonomous-loop, notification, deployment, issue, or test entries were present. Cost is estimated and uncalibrated; dispatch-level autonomy tiers were not recorded.</p>
+  </footer>
+</body>
+</html>
