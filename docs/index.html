@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The Decision Room: a 14-minute presentation on AI, judgment and the decisions you still own. Research, real cases and a hands-on experiment.">
+  <meta name="color-scheme" content="dark light">
+  <title>The Decision Room | Decide before the model does</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+    if (!new URLSearchParams(window.location.search).has("scoutTheme")) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+
+    /* Match the Decision Room app, retaining the shared theme token interface. */
+    :root {
+      --cp-bg: #f1f3f4;
+      --cp-bg-elevated: #ffffff;
+      --cp-surface: #e6e8eb;
+      --cp-surface-soft: #e0e5e7;
+      --cp-text: #0b0c0e;
+      --cp-text-muted: #434d56;
+      --cp-text-soft: #52616a;
+      --cp-border: #c2ccd0;
+      --cp-border-strong: #7d8590;
+      --cp-accent: #006c5d;
+      --cp-accent-hover: #00584c;
+      --cp-accent-fg: #ffffff;
+      --cp-accent-soft: #d5f0e9;
+      --cp-warning: #964b1b;
+      --cp-link: #006c5d;
+      --cp-grid: #dfe4e6;
+      --cp-overlay: #f1f3f4;
+      --cp-panel-strong: #ffffff;
+      --cp-transparent: transparent;
+      --cp-mono: Consolas, "Courier New", Courier, monospace;
+    }
+    html[data-theme="dark"] {
+      --cp-bg: #0b0c0e;
+      --cp-bg-elevated: #111316;
+      --cp-surface: #111316;
+      --cp-surface-soft: #191d22;
+      --cp-text: #e6e8eb;
+      --cp-text-muted: #a2aab4;
+      --cp-text-soft: #aab3be;
+      --cp-border: #2c333b;
+      --cp-border-strong: #687480;
+      --cp-accent: #5eead4;
+      --cp-accent-hover: #a4f4e7;
+      --cp-accent-fg: #0b0c0e;
+      --cp-accent-soft: #102b28;
+      --cp-warning: #f59e6c;
+      --cp-link: #5eead4;
+      --cp-grid: #15191e;
+      --cp-overlay: #0b0c0e;
+      --cp-panel-strong: #111316;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { height: 100%; background: var(--cp-bg); }
+    body {
+      margin: 0;
+      color: var(--cp-text);
+      background: var(--cp-bg);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, a { -webkit-tap-highlight-color: var(--cp-transparent); }
+    button { font: inherit; cursor: pointer; }
+    a { color: var(--cp-link); text-underline-offset: .2em; }
+    button:focus-visible, a:focus-visible, summary:focus-visible, section:focus-visible {
+      outline: 2px solid var(--cp-accent);
+      outline-offset: 5px;
+    }
+    ::selection { color: var(--cp-accent-fg); background: var(--cp-accent); }
+    .mono, .eyebrow, .tag, .source, .topbar, .controls, .slide-meta, .caption, .panel-label {
+      font-family: var(--cp-mono);
+    }
+    .topbar {
+      height: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 3.8vw;
+      border-bottom: 1px solid var(--cp-border);
+      background: var(--cp-bg);
+      font-size: 11px;
+      letter-spacing: .08em;
+    }
+    .brand { color: var(--cp-text); text-decoration: none; font-weight: 800; letter-spacing: -.04em; font-size: 17px; }
+    .brand span { color: var(--cp-accent); }
+    .event { color: var(--cp-text-muted); }
+    .tag { padding: 7px 10px; border: 1px solid var(--cp-border); color: var(--cp-accent); font-size: 10px; letter-spacing: .09em; }
+    main { position: relative; }
+    .slide {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100svh - 132px);
+      padding: 3.8vh 6vw 2.8vh;
+      overflow: hidden;
+      isolation: isolate;
+      background-image: linear-gradient(var(--cp-grid) 1px, var(--cp-transparent) 1px),
+        linear-gradient(90deg, var(--cp-grid) 1px, var(--cp-transparent) 1px);
+      background-size: 48px 48px;
+    }
+    .slide[aria-current="true"] .content { animation: enter 320ms ease-out both; }
+    .slide-meta { display: flex; justify-content: space-between; gap: 20px; color: var(--cp-text-muted); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+    .slide-meta span:first-child { color: var(--cp-accent); }
+    .content { flex: 1; width: 100%; max-width: 1500px; margin: auto; padding: 3vh 0; display: flex; flex-direction: column; justify-content: center; }
+    .eyebrow { margin: 0 0 16px; color: var(--cp-accent); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1, h2 { margin-bottom: 3vh; font-weight: 800; letter-spacing: -.065em; line-height: .97; }
+    h1 { font-size: clamp(62px, 7.9vw, 142px); max-width: 1100px; }
+    h2 { font-size: clamp(42px, 5vw, 88px); max-width: 1160px; }
+    h3 { font-size: clamp(24px, 2.1vw, 38px); line-height: 1.12; letter-spacing: -.04em; }
+    .accent { color: var(--cp-accent); }
+    .warm { color: var(--cp-warning); }
+    .muted { color: var(--cp-text-muted); }
+    .lede { max-width: 900px; font-size: clamp(21px, 2.1vw, 34px); line-height: 1.35; letter-spacing: -.025em; }
+    .question { font-size: clamp(23px, 2.35vw, 39px); font-weight: 650; line-height: 1.2; letter-spacing: -.03em; margin: 3vh 0 0; max-width: 1050px; }
+    .source { min-height: 22px; margin: 0; color: var(--cp-text-muted); font-size: 10px; line-height: 1.7; }
+    .source a { color: inherit; }
+    .source a:hover { color: var(--cp-accent); }
+    .split { display: grid; grid-template-columns: 1.1fr 1fr; gap: 5vw; align-items: center; }
+    .split > * { min-width: 0; }
+    .big-number { font-size: clamp(110px, 15vw, 260px); letter-spacing: -.085em; line-height: .87; font-weight: 800; margin-bottom: 20px; color: var(--cp-accent); font-variant-numeric: tabular-nums; }
+    .number-label { max-width: 600px; font-size: clamp(22px, 2.2vw, 36px); letter-spacing: -.025em; line-height: 1.25; }
+    .caption { color: var(--cp-text-muted); font-size: 11px; line-height: 1.6; }
+    .callout { border-left: 2px solid var(--cp-accent); padding: 8px 0 8px 24px; font-size: clamp(25px, 2.6vw, 44px); letter-spacing: -.04em; line-height: 1.2; font-weight: 650; }
+    .orbital { position: absolute; z-index: -1; width: 52vw; height: 52vw; border: 1px solid var(--cp-border); border-radius: 50%; right: -21vw; top: -6vh; }
+    .orbital::before, .orbital::after { content: ""; position: absolute; inset: 14%; border: 1px dashed var(--cp-border-strong); border-radius: 50%; }
+    .orbital::after { inset: 29%; border-color: var(--cp-accent); border-style: solid; }
+    .hero-bottom { margin-top: 3vh; display: flex; gap: 40px; align-items: start; }
+    .hero-bottom .tag { white-space: nowrap; margin-top: 6px; }
+    .hero-bottom p { max-width: 660px; font-size: clamp(23px, 2.1vw, 34px); line-height: 1.3; letter-spacing: -.03em; }
+    .line-chart { display: flex; align-items: end; gap: 20px; height: 170px; margin: 24px 0 12px; border-bottom: 1px solid var(--cp-border-strong); }
+    .chart-col { display: flex; flex-direction: column; justify-content: end; gap: 8px; height: 100%; flex: 1; max-width: 220px; }
+    .chart-col span { font-family: var(--cp-mono); font-size: 12px; }
+    .chart-col i { display: block; background: var(--cp-border-strong); height: 100px; }
+    .chart-col:last-child i { height: 115px; background: var(--cp-accent); }
+    .two-panels { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--cp-border); }
+    .panel { padding: 2.4vw; background: var(--cp-surface); }
+    .panel + .panel { border-left: 1px solid var(--cp-border); }
+    .panel-label { display: block; color: var(--cp-text-muted); font-size: 11px; margin-bottom: 24px; letter-spacing: .08em; }
+    .metric { font-size: clamp(60px, 7vw, 120px); line-height: .9; letter-spacing: -.07em; font-weight: 800; margin: 0 0 14px; }
+    .metric small { font-size: .38em; letter-spacing: -.03em; }
+    .panel p { font-size: clamp(18px, 1.6vw, 26px); line-height: 1.3; margin-bottom: 12px; }
+    .panel .caption { font-size: 11px; }
+    .data-pair { display: flex; gap: 4vw; padding: 3vh 0; }
+    .data-pair strong { display: block; font-size: clamp(65px, 8vw, 132px); font-weight: 800; letter-spacing: -.075em; line-height: 1; }
+    .data-pair span { display: block; margin-top: 8px; font-family: var(--cp-mono); font-size: 11px; color: var(--cp-text-muted); }
+    .equation { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin-top: 2vh; }
+    .equation span { padding: 18px 22px; border: 1px solid var(--cp-border); font-size: clamp(22px, 2.3vw, 38px); font-weight: 650; letter-spacing: -.04em; background: var(--cp-surface); }
+    .equation b { font-size: 42px; color: var(--cp-warning); font-weight: 400; }
+    .case-file { border: 1px solid var(--cp-border); padding: 2vw; background: var(--cp-surface); }
+    .case-file .caption { display: block; margin-bottom: 18px; color: var(--cp-accent); }
+    .case-file p { font-size: clamp(22px, 2.1vw, 36px); letter-spacing: -.03em; line-height: 1.25; }
+    .case-file .verdict { padding-top: 20px; border-top: 1px solid var(--cp-border); margin-bottom: 0; font-size: clamp(18px, 1.8vw, 28px); }
+    .scenario-stats { display: grid; grid-template-columns: .8fr 1.2fr 1fr; gap: 24px; margin: 2vh 0 4vh; }
+    .scenario-stat { border-top: 1px solid var(--cp-border-strong); padding-top: 20px; }
+    .scenario-stat strong { display: block; font-size: clamp(50px, 6.6vw, 110px); font-weight: 800; letter-spacing: -.07em; line-height: 1; white-space: nowrap; }
+    .scenario-stat span { display: block; margin-top: 14px; font-size: 15px; color: var(--cp-text-muted); }
+    .stakeholders { display: flex; gap: 10px; flex-wrap: wrap; }
+    .stakeholders span { border: 1px solid var(--cp-border); padding: 12px 16px; font-size: 16px; background: var(--cp-surface); }
+    .journey { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); padding: 0; margin: 4vh 0; border: 1px solid var(--cp-border); }
+    .journey li { position: relative; padding: 26px 20px; background: var(--cp-surface); }
+    .journey li + li { border-left: 1px solid var(--cp-border); }
+    .journey li:not(:last-child)::after { content: "\2192"; position: absolute; right: -10px; top: 28px; z-index: 1; color: var(--cp-accent); background: var(--cp-surface); font-size: 22px; }
+    .journey .step { display: block; font-family: var(--cp-mono); font-size: 12px; color: var(--cp-accent); margin-bottom: 30px; }
+    .journey h3 { font-size: clamp(22px, 2vw, 34px); margin-bottom: 14px; }
+    .journey p { color: var(--cp-text-muted); font-size: 15px; line-height: 1.45; margin-bottom: 0; }
+    .weight-list { list-style: none; padding: 0; margin: 0; }
+    .weight-list li { margin-bottom: 20px; }
+    .weight-label { display: flex; justify-content: space-between; gap: 16px; font-size: clamp(17px, 1.5vw, 23px); margin-bottom: 8px; }
+    .weight-label strong { color: var(--cp-accent); font-family: var(--cp-mono); font-weight: 400; }
+    .weight-track { height: 7px; background: var(--cp-border); }
+    .weight-fill { height: 100%; width: var(--weight); background: var(--cp-accent); }
+    .weight-caution { padding: 30px; border: 1px solid var(--cp-border); background: var(--cp-surface); }
+    .weight-caution h3 { font-size: clamp(34px, 3.7vw, 60px); }
+    .weight-caution p { color: var(--cp-text-muted); font-size: clamp(18px, 1.65vw, 25px); line-height: 1.4; margin-bottom: 0; }
+    .closing h2 { font-size: clamp(50px, 6.2vw, 106px); max-width: 1200px; }
+    .three-questions { display: grid; grid-template-columns: repeat(3, 1fr); margin: 3vh 0; }
+    .three-questions div { padding: 18px 26px 18px 0; }
+    .three-questions div + div { border-left: 1px solid var(--cp-border); padding-left: 26px; }
+    .three-questions span { font-family: var(--cp-mono); font-size: 11px; color: var(--cp-accent); }
+    .three-questions p { margin: 18px 0 0; font-size: clamp(24px, 2.35vw, 38px); letter-spacing: -.035em; line-height: 1.2; font-weight: 600; }
+    .end-line { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-top: 2vh; }
+    .end-line p { font-size: clamp(19px, 2vw, 30px); margin: 0; }
+    .signal-label { padding: 18px 24px; color: var(--cp-accent-fg); background: var(--cp-accent); font-family: var(--cp-mono); font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
+    .references { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 40px; padding: 0; list-style: none; }
+    .references li { border-top: 1px solid var(--cp-border); padding-top: 14px; }
+    .references strong { display: block; font-size: 18px; margin-bottom: 6px; }
+    .references p { color: var(--cp-text-muted); line-height: 1.5; font-size: 14px; margin-bottom: 6px; }
+    .references a { font-family: var(--cp-mono); font-size: 12px; }
+    .controls { position: relative; display: flex; align-items: center; gap: 8px; height: 68px; padding: 0 3.8vw; border-top: 1px solid var(--cp-border); background: var(--cp-bg); font-size: 11px; }
+    .control { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; min-width: 40px; padding: 8px 12px; border: 1px solid var(--cp-border); background: var(--cp-bg); color: var(--cp-text); font-family: var(--cp-mono); font-size: 11px; }
+    .control:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+    .control[aria-pressed="true"], .control.next { background: var(--cp-accent); border-color: var(--cp-accent); color: var(--cp-accent-fg); }
+    .control:disabled { opacity: .35; cursor: default; }
+    .counter { min-width: 80px; text-align: center; color: var(--cp-text-muted); font-variant-numeric: tabular-nums; }
+    .controls-spacer { flex: 1; }
+    .key-hint { color: var(--cp-text-muted); margin-right: 12px; font-size: 10px; }
+    .progress { position: absolute; left: 0; right: 0; top: -2px; height: 2px; background: var(--cp-border); }
+    .progress span { display: block; height: 100%; width: 0; background: var(--cp-accent); transition: width 200ms ease; }
+    dialog { color: var(--cp-text); background: var(--cp-panel-strong); border: 1px solid var(--cp-border-strong); padding: 28px; max-height: 85svh; width: min(850px, 92vw); }
+    dialog::backdrop { background: var(--cp-overlay); opacity: .9; }
+    .dialog-header { display: flex; justify-content: space-between; align-items: start; gap: 20px; margin-bottom: 22px; }
+    .dialog-header h2 { font-size: 34px; margin-bottom: 8px; }
+    .dialog-header p { color: var(--cp-text-muted); font-size: 14px; margin: 0; }
+    .overview-list { display: grid; grid-template-columns: 1fr 1fr; list-style: none; gap: 8px; padding: 0; margin: 0; }
+    .overview-list a { display: block; padding: 16px; border: 1px solid var(--cp-border); text-decoration: none; color: var(--cp-text); min-height: 80px; }
+    .overview-list a:hover, .overview-list a[aria-current="page"] { border-color: var(--cp-accent); background: var(--cp-accent-soft); }
+    .overview-list span { display: block; margin-bottom: 8px; color: var(--cp-accent); font-family: var(--cp-mono); font-size: 10px; }
+    .notes-panel { position: fixed; right: 20px; bottom: 84px; width: min(460px, calc(100vw - 40px)); max-height: 65svh; overflow: auto; z-index: 5; border: 1px solid var(--cp-accent); padding: 24px; background: var(--cp-panel-strong); box-shadow: var(--cp-shadow); }
+    .notes-panel h2 { font-size: 25px; margin-bottom: 10px; }
+    .notes-panel p { font-size: 15px; line-height: 1.6; color: var(--cp-text-muted); }
+    .notes-panel p:last-child { margin-bottom: 0; }
+    .notes-panel .note-cue { color: var(--cp-accent); font-family: var(--cp-mono); font-size: 12px; }
+    .keyboard-table { display: grid; grid-template-columns: 145px 1fr; gap: 14px; font-size: 15px; line-height: 1.5; }
+    kbd { font-family: var(--cp-mono); color: var(--cp-accent); }
+    .help-note { margin-top: 24px; border-top: 1px solid var(--cp-border); padding-top: 18px; color: var(--cp-text-muted); font-size: 14px; line-height: 1.6; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .status { position: fixed; bottom: 80px; left: 24px; z-index: 10; padding: 12px 16px; background: var(--cp-panel-strong); border: 1px solid var(--cp-warning); max-width: 80vw; font-size: 14px; }
+    @keyframes enter { from { opacity: .35; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @media (min-width: 1000px) and (min-height: 650px) {
+      body { height: 100svh; overflow: hidden; }
+      .slide { height: calc(100svh - 132px); min-height: 0; }
+      .content { min-height: 0; }
+    }
+    @media (max-height: 780px) and (min-width: 1000px) {
+      .slide { padding-top: 2.4vh; padding-bottom: 2vh; }
+      .content { padding: 2vh 0; }
+      h2 { font-size: clamp(40px, 4.5vw, 76px); margin-bottom: 2.5vh; }
+      h1 { font-size: clamp(60px, 7vw, 112px); }
+      .big-number { font-size: clamp(100px, 13vw, 210px); }
+      .question { margin-top: 2vh; }
+      .data-pair { padding: 1vh 0; }
+      .journey { margin: 2vh 0; }
+      .journey li { padding: 20px 16px; }
+      .references { gap: 14px 32px; }
+    }
+    @media (max-width: 999px) {
+      .slide { padding: 30px 6vw; }
+      .content { padding: 38px 0; }
+      .split { gap: 32px; }
+      h1 { font-size: clamp(60px, 9vw, 96px); }
+      h2 { font-size: clamp(40px, 6vw, 68px); }
+      .big-number { font-size: clamp(100px, 17vw, 170px); }
+      .event, .key-hint { display: none; }
+      .panel { padding: 26px; }
+      .scenario-stats { gap: 16px; }
+      .journey { grid-template-columns: 1fr; }
+      .journey li { padding: 20px 24px 20px 70px; }
+      .journey li + li { border-left: 0; border-top: 1px solid var(--cp-border); }
+      .journey .step { position: absolute; left: 24px; top: 24px; }
+      .journey li:not(:last-child)::after { display: none; }
+      .journey h3 { margin-bottom: 6px; }
+      .controls { position: sticky; bottom: 0; z-index: 3; }
+      .control { min-height: 40px; }
+      .weight-caution { padding: 24px; }
+    }
+    @media (max-width: 620px) {
+      .topbar { padding: 0 5vw; height: 58px; }
+      .brand { font-size: 15px; }
+      .topbar .tag { font-size: 8px; padding: 6px; }
+      .slide { min-height: calc(100svh - 126px); padding: 26px 6vw; }
+      .slide-meta { font-size: 9px; }
+      .slide-meta span:last-child { max-width: 65%; text-align: right; }
+      .content { padding: 36px 0; }
+      h1 { font-size: clamp(48px, 12.5vw, 76px); }
+      h2 { font-size: clamp(36px, 9vw, 54px); }
+      .split { grid-template-columns: 1fr; }
+      .big-number { font-size: clamp(98px, 30vw, 130px); margin-bottom: 16px; }
+      .number-label { font-size: 25px; }
+      .hero-bottom { flex-direction: column; gap: 18px; }
+      .hero-bottom p, .lede { font-size: 23px; }
+      .callout { padding-left: 18px; font-size: 29px; }
+      .question { font-size: 26px; margin-top: 26px; }
+      .two-panels { grid-template-columns: 1fr; }
+      .panel + .panel { border-left: 0; border-top: 1px solid var(--cp-border); }
+      .metric { font-size: 76px; }
+      .scenario-stats { grid-template-columns: 1fr; gap: 24px; margin-top: 26px; }
+      .scenario-stat { display: flex; align-items: center; gap: 20px; padding-top: 16px; }
+      .scenario-stat strong { font-size: 62px; }
+      .scenario-stat span { margin-top: 0; font-size: 14px; max-width: 120px; }
+      .stakeholders span { font-size: 14px; }
+      .case-file { padding: 24px; }
+      .case-file p { font-size: 26px; }
+      .three-questions { grid-template-columns: 1fr; margin: 16px 0; }
+      .three-questions div { padding: 18px 0; }
+      .three-questions div + div { border-left: 0; border-top: 1px solid var(--cp-border); padding-left: 0; }
+      .three-questions p { font-size: 26px; margin-top: 8px; }
+      .end-line { flex-direction: column; align-items: start; }
+      .references { grid-template-columns: 1fr; }
+      .controls { padding: 0 12px; gap: 5px; }
+      .control { padding: 8px; min-width: 36px; }
+      .counter { min-width: 55px; font-size: 10px; }
+      .control-secondary { display: none; }
+      .overview-list { grid-template-columns: 1fr; }
+      dialog { padding: 22px; }
+      .source { font-size: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+    }
+    @page { size: 16in 9in; margin: 0; }
+    @media print {
+      html, body { height: auto !important; overflow: visible !important; }
+      .topbar, .controls, .notes-panel, dialog, .status, .sr-only { display: none !important; }
+      .slide, .slide[hidden] {
+        display: flex !important;
+        width: 16in;
+        height: 9in;
+        min-height: 0;
+        padding: .45in .7in;
+        break-after: page;
+        break-inside: avoid;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+      .slide:last-child { break-after: auto; }
+      .content { animation: none !important; padding: .3in 0; }
+      h1 { font-size: 104px; }
+      h2 { font-size: 68px; }
+      .big-number { font-size: 200px; }
+      .source { font-size: 11px; }
+      .split { grid-template-columns: 1.1fr 1fr; gap: 55px; }
+      .hero-bottom { flex-direction: row; }
+      .two-panels { grid-template-columns: 1fr 1fr; }
+      .panel { padding: 28px; }
+      .panel + .panel { border-top: 0; border-left: 1px solid var(--cp-border); }
+      .metric { font-size: 100px; }
+      .scenario-stats { grid-template-columns: .8fr 1.2fr 1fr; gap: 24px; }
+      .scenario-stat { display: block; }
+      .scenario-stat strong { font-size: 90px; }
+      .scenario-stat span { margin-top: 14px; max-width: none; }
+      .journey { grid-template-columns: repeat(5, 1fr); margin: 28px 0; }
+      .journey li { padding: 24px 20px; }
+      .journey li + li { border-top: 0; border-left: 1px solid var(--cp-border); }
+      .journey .step { position: static; margin-bottom: 28px; font-size: 11px; }
+      .journey li:not(:last-child)::after { display: block; }
+      .journey h3 { font-size: 28px; margin-bottom: 14px; }
+      .journey p { font-size: 16px; }
+      .three-questions { grid-template-columns: repeat(3, 1fr); }
+      .three-questions div { padding: 18px 26px 18px 0; }
+      .three-questions div + div { border-top: 0; border-left: 1px solid var(--cp-border); padding-left: 26px; }
+      .three-questions p { font-size: 32px; }
+      .end-line { flex-direction: row; align-items: center; }
+      .references { grid-template-columns: 1fr 1fr; }
+      a { text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#slide-1" aria-label="The Decision Room, first slide">THE DECISION<span> ROOM.</span></a>
+    <span class="event">SKILL UP FORUM / ATHENS 2026</span>
+    <span class="tag">HUMAN JUDGMENT / AI JUDGMENT</span>
+  </header>
+
+  <main id="deck" aria-label="The Decision Room presentation">
+    <section class="slide" id="slide-1" data-title="Decide before the model does" data-duration="1:00" aria-labelledby="title-1" tabindex="-1">
+      <div class="slide-meta"><span>01 / THE QUESTION</span><span>13-MINUTE OPENING</span></div>
+      <div class="orbital" aria-hidden="true"></div>
+      <div class="content">
+        <p class="eyebrow">The Decision Room</p>
+        <h1 id="title-1">Decide before<br>the <span class="accent">model does.</span></h1>
+        <div class="hero-bottom">
+          <span class="tag">THINK ABOUT YOUR LAST AI RECOMMENDATION</span>
+          <p>Did you change your mind&mdash;or stop making up your own?</p>
+        </div>
+      </div>
+      <p class="source">An experiment in judgment. Not a contest to guess the model's favourite answer.</p>
+      <template class="speaker-notes">
+        <p class="note-cue">OPEN WITH A QUESTION / 1 MINUTE</p>
+        <p>Imagine it is Monday morning. Your team is overloaded. Your director wants an AI plan. You ask an assistant what to do and get a convincing recommendation in seconds.</p>
+        <p>Would you recognise a bad recommendation if it sounded better than your own explanation?</p>
+        <p>Give the room ten seconds. Ask for a show of hands: who has accepted an AI suggestion before checking its main assumption? Do not judge the answers. The point is to make the question personal.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-2" data-title="We say we stay in charge" data-duration="1:00" aria-labelledby="title-2" tabindex="-1" hidden>
+      <div class="slide-meta"><span>02 / THE INTENTION</span><span>SURVEY / 2026</span></div>
+      <div class="content">
+        <h2 id="title-2">We say we stay <span class="accent">in charge.</span></h2>
+        <div class="split">
+          <div>
+            <div class="big-number">86%</div>
+            <p class="number-label">of surveyed AI users say they treat AI output as a starting point, not a final answer.</p>
+            <p class="caption">Self-reported behaviour. Not an observation of how carefully people check.</p>
+          </div>
+          <div class="callout">What do you actually do between<br><span class="accent">&ldquo;starting point&rdquo;</span><br>and decision?</div>
+        </div>
+      </div>
+      <p class="source">Microsoft Work Trend Index, 2026. Initial survey: 20,000 AI-using workers, 10 markets. <a href="https://news.microsoft.com/source/asia/2026/08/10/filipino-workers-outpace-global-peers-in-ai-driven-reinvention-new-microsoft-work-trend-index-reveals/" target="_blank" rel="noopener noreferrer">Source and global comparison figures &#8599;</a></p>
+      <template class="speaker-notes">
+        <p class="note-cue">THE GAP BETWEEN INTENTION AND PRACTICE / 1 MINUTE</p>
+        <p>Most people do not describe themselves as blindly following AI. We say we review it. But review can mean anything from checking the evidence to reading it twice and thinking, "That sounds reasonable."</p>
+        <p>Today we will make that review visible. The 86% is a global figure reported in Microsoft's 2026 Work Trend Index. It describes what respondents say, not independently observed verification.</p>
+        <p>For a ten-minute opening, skip this slide and move straight to the real productivity evidence.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-3" data-title="Real gains. Your management decision." data-duration="2:00" aria-labelledby="title-3" tabindex="-1" hidden>
+      <div class="slide-meta"><span>03 / THE OPPORTUNITY</span><span>REAL WORKPLACE / 2025 PAPER</span></div>
+      <div class="content">
+        <h2 id="title-3">The gains are real.<br>The decision is <span class="accent">still yours.</span></h2>
+        <div class="split">
+          <div>
+            <div class="big-number">+15%</div>
+            <p class="number-label">issues resolved per hour, on average.</p>
+            <p class="caption">5,172 customer-support agents. AI assistance, not autonomous replacement.</p>
+          </div>
+          <div>
+            <p class="eyebrow">Illustrative index / study average</p>
+            <div class="line-chart" role="img" aria-label="Productivity index: without assistance 100, with AI assistance 115. This illustrates the reported 15 percent average increase.">
+              <div class="chart-col"><span>100 / BASELINE</span><i></i></div>
+              <div class="chart-col"><span>115 / AI ASSISTED</span><i></i></div>
+            </div>
+            <p class="lede">Who gets the gain?<br>Customers. Employees. The cost line.</p>
+          </div>
+        </div>
+        <p class="question">More capacity is a finding. What to do with it is a choice.</p>
+      </div>
+      <p class="source">Brynjolfsson, Li &amp; Raymond, <cite>Generative AI at Work</cite>, QJE, 2025. One support setting; effects differ by experience. <a href="https://www.gsb.stanford.edu/faculty-research/publications/generative-ai-work" target="_blank" rel="noopener noreferrer">Published-paper summary &#8599;</a></p>
+      <template class="speaker-notes">
+        <p class="note-cue">REAL-WORLD CASE / 2 MINUTES</p>
+        <p>Researchers studied the staggered introduction of an AI assistant in a real customer-support operation. Average issues resolved per hour increased by 15%.</p>
+        <p>Less-experienced and lower-skilled agents improved both speed and quality. The most experienced and highest-skilled agents saw small speed gains but small declines in quality. The same tool did not create the same value for everyone.</p>
+        <p>If your team gained 15% capacity tomorrow, would you reduce waiting times, improve onboarding, give experienced agents harder cases, or reduce staffing? Ask the room to pick one.</p>
+        <p>The research measures performance. It does not choose the business objective. Use 5,172 and 15% from the 2025 published paper together; the earlier working paper had different figures. This is one setting, not a promise for every team.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-4" data-title="The jagged frontier" data-duration="2:00" aria-labelledby="title-4" tabindex="-1" hidden>
+      <div class="slide-meta"><span>04 / THE CATCH</span><span>RANDOMISED EXPERIMENT / 758 BCG CONSULTANTS</span></div>
+      <div class="content">
+        <h2 id="title-4">Same AI.<br><span class="accent">Very different results.</span></h2>
+        <div class="two-panels">
+          <div class="panel">
+            <span class="panel-label">TASKS WITHIN GPT-4'S CAPABILITIES</span>
+            <div class="metric accent">25.1%<small> faster</small></div>
+            <p>More than 40% higher output quality.</p>
+            <p class="caption">Realistic consulting tasks in the experiment.</p>
+          </div>
+          <div class="panel">
+            <span class="panel-label">A TASK OUTSIDE ITS CAPABILITIES</span>
+            <div class="metric warm">&minus;19<small> pp</small></div>
+            <p>Less likely to reach the correct solution.</p>
+            <p class="caption">Percentage points, not a 19% relative decline.</p>
+          </div>
+        </div>
+        <p class="question">A better-written recommendation is not necessarily a better-supported one.</p>
+      </div>
+      <p class="source">Dell'Acqua et al., <cite>Navigating the Jagged Technological Frontier</cite>, 2023 working paper. GPT-4; task-specific findings, not a rating of current models. <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4573321" target="_blank" rel="noopener noreferrer">Paper &#8599;</a> / <a href="https://www.oneusefulthing.org/p/centaurs-and-cyborgs-on-the-jagged" target="_blank" rel="noopener noreferrer">Co-author explanation &#8599;</a></p>
+      <template class="speaker-notes">
+        <p class="note-cue">THE JAGGED FRONTIER / 2 MINUTES</p>
+        <p>In an experiment involving 758 BCG consultants, access to GPT-4 produced substantial gains on realistic consulting tasks within its capabilities: 25.1% faster completion and more than 40% higher output quality.</p>
+        <p>But on a separate task deliberately chosen to fall outside those capabilities, AI users were 19 percentage points less likely to solve it correctly.</p>
+        <p>Being excellent at one task does not guarantee competence at a nearby task. AI might draft an excellent rollout plan while misunderstanding the evidence that determines whether you should roll out at all.</p>
+        <p>Ask: how do you know which kind of task you are delegating? These are results for specified tasks using GPT-4 in 2023, not permanent limits or current-model benchmarks.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-5" data-title="Confidence is not verification" data-duration="1:30" aria-labelledby="title-5" tabindex="-1" hidden>
+      <div class="slide-meta"><span>05 / THE HUMAN FACTOR</span><span>SELF-REPORT STUDY / CHI 2025</span></div>
+      <div class="content">
+        <div class="split">
+          <div>
+            <h2 id="title-5">Confidence is not <span class="accent">verification.</span></h2>
+            <div class="data-pair">
+              <div><strong>319</strong><span>KNOWLEDGE WORKERS</span></div>
+              <div><strong>936</strong><span>FIRST-HAND EXAMPLES</span></div>
+            </div>
+          </div>
+          <div class="callout">Higher confidence in AI was associated with <span class="accent">less critical thinking.</span></div>
+        </div>
+        <div class="equation" aria-label="Sounds right does not equal checked"><span>Sounds right</span><b aria-hidden="true">&ne;</b><span>Checked</span></div>
+        <p class="question">When the answer feels obvious, what do you stop checking?</p>
+      </div>
+      <p class="source">Lee et al., CHI 2025. Association in self-reported practices; not proof that AI causes long-term skill loss. <a href="https://www.microsoft.com/en-us/research/publication/the-impact-of-generative-ai-on-critical-thinking-self-reported-reductions-in-cognitive-effort-and-confidence-effects-from-a-survey-of-knowledge-workers/" target="_blank" rel="noopener noreferrer">Research publication &#8599;</a></p>
+      <template class="speaker-notes">
+        <p class="note-cue">WHY WE ASK YOU TO THINK FIRST / 90 SECONDS</p>
+        <p>This study surveyed 319 knowledge workers who shared 936 first-hand examples. Greater confidence in generative AI was associated with less critical thinking; greater confidence in one's own ability was associated with more.</p>
+        <p>Do not say "AI makes us less intelligent." This was a survey of self-reported practices, not a causal test of long-term skill loss.</p>
+        <p>The researchers describe a shift toward verification, response integration and task stewardship. That is why the experiment asks you to write your own answer first: you need a position to compare, not just an answer to approve. This design is inspired by the concern; this workshop does not prove the intervention works.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-6" data-title="The company owns the consequence" data-duration="1:30" aria-labelledby="title-6" tabindex="-1" hidden>
+      <div class="slide-meta"><span>06 / ACCOUNTABILITY</span><span>REAL CASE / CANADA / 2024</span></div>
+      <div class="content">
+        <h2 id="title-6">The chatbot spoke.<br><span class="accent">The company answered.</span></h2>
+        <div class="split">
+          <div class="case-file">
+            <span class="caption">CASE FILE / MOFFATT v. AIR CANADA</span>
+            <p>A customer relied on incorrect chatbot advice about claiming a bereavement fare after travel.</p>
+            <p class="verdict">The tribunal held Air Canada liable for negligent misrepresentation.</p>
+          </div>
+          <div class="callout">You can delegate a response.<br><br>You cannot assume you have delegated <span class="accent">accountability.</span></div>
+        </div>
+        <p class="question">Who owns the promises your system makes?</p>
+      </div>
+      <p class="source"><cite>Moffatt v. Air Canada</cite>, 2024 BCCRT 149, 14 February 2024. Chatbot accountability case; not a finding about a specific generative model. <a href="https://www.mccarthy.ca/en/insights/blogs/techlex/moffatt-v-air-canada-misrepresentation-ai-chatbot" target="_blank" rel="noopener noreferrer">Legal analysis &#8599;</a></p>
+      <template class="speaker-notes">
+        <p class="note-cue">ACCOUNTABILITY IN PRACTICE / 90 SECONDS</p>
+        <p>A customer was told by Air Canada's website chatbot that they could apply for a bereavement discount after travelling. The actual policy did not allow that. The customer relied on the advice; the tribunal held the airline liable for negligent misrepresentation.</p>
+        <p>This is a specific Canadian tribunal decision, not a universal legal rule. It is not proof that a particular LLM failed: the case does not establish the chatbot's underlying model architecture.</p>
+        <p>Ask: if your assistant gives a customer the wrong promise tomorrow, who can detect it, correct it and make it right? For a shorter presentation, tell the story in thirty seconds.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-7" data-title="Now you are the manager" data-duration="1:00" aria-labelledby="title-7" tabindex="-1" hidden>
+      <div class="slide-meta"><span>07 / YOUR TURN</span><span>FICTIONAL WORKSHOP SCENARIO</span></div>
+      <div class="content">
+        <p class="eyebrow">Northstar Services / Customer-support AI rollout</p>
+        <h2 id="title-7">Now <span class="accent">you</span> are the manager.</h2>
+        <div class="scenario-stats">
+          <div class="scenario-stat"><strong>300</strong><span>employees</span></div>
+          <div class="scenario-stat"><strong class="accent">4 &rarr; 11</strong><span>minutes of support waiting time</span></div>
+          <div class="scenario-stat"><strong>3 <span class="sr-only">months</span><small aria-hidden="true">mo.</small></strong><span>to show visible AI progress</span></div>
+        </div>
+        <div class="stakeholders"><span>Customers want speed.</span><span>Employees worry about quality and jobs.</span><span>Leadership wants progress.</span></div>
+        <p class="question">What would you do first&mdash;and what would make you reconsider?</p>
+      </div>
+      <p class="source">Scenario figures are invented for the workshop, not research findings. Bring an anonymous case of your own in the app if you prefer.</p>
+      <template class="speaker-notes">
+        <p class="note-cue">SET UP THE EXPERIMENT / 1 MINUTE</p>
+        <p>This is the ready-made scenario in the app. Say explicitly that Northstar and these numbers are fictional. Do not show example A/B/C options yet: that would undermine the unaided answer.</p>
+        <p>There is no hidden answer key. You have incomplete information, competing stakeholders and a deadline, just like a real management decision. Ask participants to describe their action and the condition that would make them reconsider.</p>
+        <p>The app also supports an anonymous custom scenario. Ask people to omit names, personal data and confidential details. Do not conflate a workshop prompt with confidential decision support.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-8" data-title="The experiment journey" data-duration="1:00" aria-labelledby="title-8" tabindex="-1" hidden>
+      <div class="slide-meta"><span>08 / THE EXPERIMENT</span><span>ONE DECISION / FIVE MOVES</span></div>
+      <div class="content">
+        <h2 id="title-8">Think first.<br>Then <span class="accent">compare.</span></h2>
+        <ol class="journey">
+          <li><span class="step">01 / YOU</span><h3>Write your answer</h3><p>Before seeing any AI suggestions.</p></li>
+          <li><span class="step">02 / OPTIONS AGENT</span><h3>Explore alternatives</h3><p>Three options from the scenario, without your answer.</p></li>
+          <li><span class="step">03 / COMPARISON AGENT</span><h3>See the differences</h3><p>Overlap, gaps and ideas either side missed.</p></li>
+          <li><span class="step">04 / YOU</span><h3>Lock your choice</h3><p>Choose A, B or C before any model score.</p></li>
+          <li><span class="step">05 / DECISION MODEL</span><h3>Reveal the ranking</h3><p>Your selection is not a scoring input.</p></li>
+        </ol>
+        <p class="lede">Generating options &ne; evaluating options &ne; owning the decision.</p>
+      </div>
+      <p class="source">Current app flow: options agent &rarr; comparison agent &rarr; your choice &rarr; independent scoring. Separate calls do not guarantee independent errors.</p>
+      <template class="speaker-notes">
+        <p class="note-cue">EXPLAIN THE ORDER / 1 MINUTE</p>
+        <p>First, write your own answer. The options agent generates three alternatives from the scenario only. The comparison agent then sees both your answer and those options and identifies overlap and differences, without ranking.</p>
+        <p>You pick an option. Only then does the decision model rank the same alternatives. Your selection is excluded from its scoring request.</p>
+        <p>Watch for three things: did AI broaden your thinking, did the comparison frame your choice, and did a numerical score make an option feel more authoritative? Independent input does not mean independent model errors or proof of correctness.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-9" data-title="A ranking reflects priorities" data-duration="1:00" aria-labelledby="title-9" tabindex="-1" hidden>
+      <div class="slide-meta"><span>09 / UNDER THE SCORE</span><span>NORTHSTAR RUBRIC / CURRENT APP</span></div>
+      <div class="content">
+        <h2 id="title-9">A ranking reflects <span class="accent">priorities.</span></h2>
+        <div class="split">
+          <div>
+            <ul class="weight-list" aria-label="Scoring criteria and weights">
+              <li><div class="weight-label"><span>Customer or employee impact</span><strong>30%</strong></div><div class="weight-track" aria-hidden="true"><div class="weight-fill" style="--weight: 100%"></div></div></li>
+              <li><div class="weight-label"><span>Expected business impact</span><strong>20%</strong></div><div class="weight-track" aria-hidden="true"><div class="weight-fill" style="--weight: 66.6667%"></div></div></li>
+              <li><div class="weight-label"><span>Implementation risk</span><strong>20%</strong></div><div class="weight-track" aria-hidden="true"><div class="weight-fill" style="--weight: 66.6667%"></div></div></li>
+              <li><div class="weight-label"><span>Time to measurable value</span><strong>20%</strong></div><div class="weight-track" aria-hidden="true"><div class="weight-fill" style="--weight: 66.6667%"></div></div></li>
+              <li><div class="weight-label"><span>Reversibility</span><strong>10%</strong></div><div class="weight-track" aria-hidden="true"><div class="weight-fill" style="--weight: 33.3333%"></div></div></li>
+            </ul>
+            <p class="caption">Bar lengths relative to the largest weight, 30%. The weights total 100%.</p>
+          </div>
+          <div class="weight-caution">
+            <p class="eyebrow">Before you trust the percentage</p>
+            <h3>A model score is not a business <span class="accent">success rate.</span></h3>
+            <p>It reflects the supplied scenario, options and rubric. It is not a validated probability that the action will work.</p>
+          </div>
+        </div>
+        <p class="question">Would you use the same weights?</p>
+      </div>
+      <p class="source">Weights from the app's Northstar scenario configuration. Live and mock outputs must be labelled; mock scores are demonstration values, not evidence.</p>
+      <template class="speaker-notes">
+        <p class="note-cue">REVEAL THE VALUE JUDGMENT / 1 MINUTE</p>
+        <p>The Northstar rubric weights people impact at 30%, business impact, implementation risk and time to value at 20% each, and reversibility at 10%. These are priorities we supply, not neutral facts discovered by the model.</p>
+        <p>Ask whether the audience would use different weights. A displayed percentage must not be described as the probability the business decision will succeed. The workshop does not establish that calibration.</p>
+        <p>Check the app's mode indicator during the demo. Say whether outputs are live or mock. Agreement with the model is not an accuracy metric. Do not describe a 100% value as certainty about a real outcome.</p>
+      </template>
+    </section>
+
+    <section class="slide closing" id="slide-10" data-title="Know why you agree or disagree" data-duration="1:00" aria-labelledby="title-10" tabindex="-1" hidden>
+      <div class="slide-meta"><span>10 / THE TAKEAWAY</span><span>YOUR JUDGMENT STAYS IN CHARGE</span></div>
+      <div class="content">
+        <h2 id="title-10">The goal is not<br>to <span class="accent">agree with AI.</span></h2>
+        <p class="lede">It is to know why you agree&mdash;or disagree.</p>
+        <div class="three-questions">
+          <div><span>01 / ASSUMPTION</span><p>What assumption matters most?</p></div>
+          <div><span>02 / EVIDENCE</span><p>What would change my mind?</p></div>
+          <div><span>03 / ACTION</span><p>What is the smallest reversible test?</p></div>
+        </div>
+        <div class="end-line"><p>You own the reasoning. You own the call.</p><span class="signal-label">LET'S RUN THE EXPERIMENT &#8599;</span></div>
+      </div>
+      <p class="source">Workshop observations are not proof of accuracy or causal improvement. Matching the model is not the definition of a good decision.</p>
+      <template class="speaker-notes">
+        <p class="note-cue">HAND OVER TO THE APP / 1 MINUTE</p>
+        <p>Agreement does not prove you are right. Disagreement does not prove you are wrong. If everyone agrees, the room may share the same blind spot.</p>
+        <p>The habit for Monday: write your view before asking AI, ask for genuinely different alternatives, and identify what evidence would justify acting. We are not testing whether you can guess the model's favourite answer. We are testing whether you can keep ownership of your reasoning.</p>
+        <p>Switch to the separately hosted workshop app now. GitHub Pages serves only this static deck; it cannot run the workshop's Node API or Foundry calls. This deck deliberately makes no API requests.</p>
+        <p>For the debrief: the dashboard shows choices and model agreement, not decision accuracy. Options can differ across sessions, so aggregate A/B/C labels need not represent the same strategy.</p>
+      </template>
+    </section>
+
+    <section class="slide" id="slide-11" data-title="Sources and evidence boundaries" data-duration="APPENDIX" aria-labelledby="title-11" tabindex="-1" hidden>
+      <div class="slide-meta"><span>APPENDIX / KEEP THE EVIDENCE STRAIGHT</span><span>NOT PART OF THE 13 MINUTES</span></div>
+      <div class="content">
+        <h2 id="title-11">The evidence behind <span class="accent">the questions.</span></h2>
+        <ol class="references">
+          <li><strong>01 / What AI users say</strong><p>Microsoft Work Trend Index, 2026. Global 86% figure; initial survey of 20,000 AI-using workers across 10 markets. Self-reported behaviour.</p><a href="https://news.microsoft.com/source/asia/2026/08/10/filipino-workers-outpace-global-peers-in-ai-driven-reinvention-new-microsoft-work-trend-index-reveals/" target="_blank" rel="noopener noreferrer">Microsoft report summary &#8599;</a></li>
+          <li><strong>02 / Productivity in a real workplace</strong><p>Brynjolfsson, Li &amp; Raymond. Generative AI at Work. QJE 140(2), 889&ndash;942, 2025. 5,172 support agents; +15% issues resolved per hour.</p><a href="https://www.gsb.stanford.edu/faculty-research/publications/generative-ai-work" target="_blank" rel="noopener noreferrer">Stanford publication summary &#8599;</a></li>
+          <li><strong>03 / The jagged frontier</strong><p>Dell'Acqua et al., 2023 working paper. Randomised experiment; 758 BCG consultants. GPT-4 gains and losses depended on the task.</p><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4573321" target="_blank" rel="noopener noreferrer">Research paper / SSRN 4573321 &#8599;</a></li>
+          <li><strong>04 / Critical thinking and confidence</strong><p>Lee et al., CHI 2025, Article 1121. 319 knowledge workers; 936 examples. Self-reported associations, not causal proof of skill loss.</p><a href="https://doi.org/10.1145/3706598.3713778" target="_blank" rel="noopener noreferrer">DOI: 10.1145/3706598.3713778 &#8599;</a></li>
+          <li><strong>05 / Chatbot accountability</strong><p>Moffatt v. Air Canada, 2024 BCCRT 149, 14 February 2024. A specific tribunal decision; model architecture was not established.</p><a href="https://www.mccarthy.ca/en/insights/blogs/techlex/moffatt-v-air-canada-misrepresentation-ai-chatbot" target="_blank" rel="noopener noreferrer">Legal analysis &#8599;</a></li>
+          <li><strong>06 / Our experiment is not a benchmark</strong><p>Northstar is fictional. Rubric weights are design choices. Model scores are not validated business-success probabilities. Agreement is not accuracy.</p><p>Separate research findings, model judgments and workshop observations.</p></li>
+        </ol>
+      </div>
+      <p class="source">Sources checked 17 October 2026. Links open externally; the deck itself requires no network connection.</p>
+      <template class="speaker-notes">
+        <p class="note-cue">REFERENCE ONLY / NO PLANNED TALK TIME</p>
+        <p>Use this appendix for audience questions or sharing after the session. Each research slide also links directly to its source.</p>
+        <p>The main ten slides total thirteen minutes including brief audience pauses, excluding the live demo. For ten minutes, skip slide 2, shorten the Air Canada case and discuss the rubric during the demo.</p>
+        <p>Publishing: the Deploy presentation to GitHub Pages workflow publishes only this file. Push changes under docs/ or to .github/workflows/deploy-pages.yml to main to redeploy, or run the workflow manually from the Actions tab on main. Repository Pages settings must use GitHub Actions as the source. Local edits are not published until committed and pushed.</p>
+      </template>
+    </section>
+  </main>
+
+  <footer class="controls" aria-label="Presentation controls">
+    <div class="progress" role="progressbar" aria-label="Slide progress" aria-valuemin="1" aria-valuemax="11" aria-valuenow="1"><span id="progress-fill"></span></div>
+    <button class="control" id="previous" type="button" aria-label="Previous slide" title="Previous slide (Left arrow)">&#8592;</button>
+    <span class="counter" id="counter" aria-hidden="true">01 / 11</span>
+    <button class="control next" id="next" type="button" aria-label="Next slide" title="Next slide (Right arrow)">&#8594;</button>
+    <span class="controls-spacer"></span>
+    <span class="key-hint">ARROWS TO MOVE / N FOR NOTES</span>
+    <button class="control" id="overview-button" type="button" aria-label="Open slide overview" title="Slide overview (O)">Slides</button>
+    <button class="control" id="notes-button" type="button" aria-controls="notes-panel" aria-expanded="false" aria-pressed="false" title="Show presenter notes on this screen (N)">Notes</button>
+    <button class="control control-secondary" id="fullscreen-button" type="button" aria-label="Enter fullscreen" title="Fullscreen (F)">Full</button>
+    <button class="control" id="help-button" type="button" aria-label="Open presentation help" title="Help (?)">?</button>
+  </footer>
+
+  <aside class="notes-panel" id="notes-panel" aria-label="Presenter notes, visible on this screen" hidden>
+    <div class="dialog-header"><div><p class="eyebrow">PRESENTER NOTES / VISIBLE ON THIS SCREEN</p><h2 id="notes-title"></h2></div><button class="control" id="notes-close" type="button" aria-label="Close presenter notes">&times;</button></div>
+    <div id="notes-content"></div>
+  </aside>
+
+  <dialog id="overview-dialog" aria-labelledby="overview-title">
+    <div class="dialog-header"><div><h2 id="overview-title">The whole journey.</h2><p>10 slides / 13 minutes + a sources appendix.</p></div><button class="control" data-close type="button" aria-label="Close slide overview">&times;</button></div>
+    <ol class="overview-list" id="overview-list"></ol>
+  </dialog>
+
+  <dialog id="help-dialog" aria-labelledby="help-title">
+    <div class="dialog-header"><div><h2 id="help-title">Present with intention.</h2><p>A standalone, offline-capable slide deck.</p></div><button class="control" data-close type="button" aria-label="Close presentation help">&times;</button></div>
+    <div class="keyboard-table">
+      <kbd>&larr; / &rarr;</kbd><span>Previous / next slide. Page Up / Page Down also work.</span>
+      <kbd>Space</kbd><span>Next slide. Shift + Space goes back.</span>
+      <kbd>Home / End</kbd><span>First slide / final main slide.</span>
+      <kbd>N</kbd><span>Toggle presenter notes. Notes appear on the same screen.</span>
+      <kbd>O</kbd><span>Open the slide overview, including the sources appendix.</span>
+      <kbd>F</kbd><span>Enter / exit fullscreen, where supported by your browser.</span>
+      <kbd>Esc</kbd><span>Close notes or a dialog.</span>
+      <kbd>Ctrl / Cmd + P</kbd><span>Print or save all 11 slides as a landscape PDF.</span>
+    </div>
+    <p class="help-note">Share a specific slide using its URL, for example <code>#slide-4</code>. Swipe horizontally on touch devices. To use the light theme, append <code>?scoutTheme=light</code> before the slide hash. The deck defaults to the workshop's dark theme.</p>
+    <p class="help-note">GitHub Pages hosts this presentation only. The live workshop needs its own backend hosting. External source links require an internet connection; slides, notes and controls do not.</p>
+  </dialog>
+  <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+  <p class="status" id="status" role="alert" hidden></p>
+  <noscript><p class="help-note">JavaScript is disabled. All slides are shown below; use your browser's print command to save the complete deck.</p><style>.slide[hidden] { display: flex !important; } .controls { display: none; } body { height: auto; overflow: auto; } .slide { height: auto; min-height: 100vh; }</style></noscript>
+
+  <script>
+    (() => {
+      "use strict";
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const mainSlideCount = slides.filter(slide => slide.dataset.duration !== "APPENDIX").length;
+      const previous = document.getElementById("previous");
+      const next = document.getElementById("next");
+      const counter = document.getElementById("counter");
+      const progress = document.querySelector(".progress");
+      const fill = document.getElementById("progress-fill");
+      const announcement = document.getElementById("announcement");
+      const notesPanel = document.getElementById("notes-panel");
+      const notesButton = document.getElementById("notes-button");
+      const overview = document.getElementById("overview-dialog");
+      const help = document.getElementById("help-dialog");
+      const fullscreenButton = document.getElementById("fullscreen-button");
+      const overviewLinks = [];
+      let current = 0;
+      let statusTimeout;
+      let touchStart = null;
+      const pad = value => String(value).padStart(2, "0");
+
+      slides.forEach((slide, index) => {
+        const item = document.createElement("li");
+        const link = document.createElement("a");
+        link.href = `#${slide.id}`;
+        const label = document.createElement("span");
+        label.textContent = `${pad(index + 1)} / ${slide.dataset.duration}`;
+        link.append(label, document.createTextNode(slide.dataset.title));
+        link.addEventListener("click", event => {
+          event.preventDefault();
+          overview.close();
+          go(index, { focus: true });
+        });
+        item.append(link);
+        document.getElementById("overview-list").append(item);
+        overviewLinks.push(link);
+      });
+
+      function updateNotes() {
+        document.getElementById("notes-title").textContent =
+          `${pad(current + 1)} / ${slides[current].dataset.duration}`;
+        document.getElementById("notes-content").replaceChildren(
+          slides[current].querySelector(".speaker-notes").content.cloneNode(true)
+        );
+        notesPanel.scrollTop = 0;
+      }
+
+      function go(index, { historyMode = "push", focus = false } = {}) {
+        current = Math.max(0, Math.min(slides.length - 1, index));
+        const focusedSlide = document.activeElement.closest(".slide");
+        slides.forEach((slide, slideIndex) => {
+          const active = slideIndex === current;
+          slide.hidden = !active;
+          if (active) slide.setAttribute("aria-current", "true");
+          else slide.removeAttribute("aria-current");
+          if (active) overviewLinks[slideIndex].setAttribute("aria-current", "page");
+          else overviewLinks[slideIndex].removeAttribute("aria-current");
+        });
+        previous.disabled = current === 0;
+        next.disabled = current === slides.length - 1;
+        counter.textContent = `${pad(current + 1)} / ${pad(slides.length)}`;
+        progress.setAttribute("aria-valuenow", String(current + 1));
+        progress.setAttribute("aria-valuetext", `Slide ${current + 1} of ${slides.length}`);
+        fill.style.width = `${((current + 1) / slides.length) * 100}%`;
+        document.title = `${slides[current].dataset.title} | The Decision Room`;
+        announcement.textContent = `Slide ${current + 1} of ${slides.length}: ${slides[current].dataset.title}`;
+        updateNotes();
+        const hash = `#${slides[current].id}`;
+        if (historyMode !== "none" && window.location.hash !== hash) {
+          if (historyMode === "replace") history.replaceState(null, "", hash);
+          else history.pushState(null, "", hash);
+        }
+        if (focus || focusedSlide) slides[current].focus({ preventScroll: true });
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }
+
+      function readHash() {
+        const index = slides.findIndex(slide => `#${slide.id}` === window.location.hash);
+        go(index >= 0 ? index : 0, { historyMode: "replace" });
+      }
+
+      function toggleNotes(force) {
+        const show = force === undefined ? notesPanel.hidden : force;
+        notesPanel.hidden = !show;
+        notesButton.setAttribute("aria-expanded", String(show));
+        notesButton.setAttribute("aria-pressed", String(show));
+        if (!show && notesPanel.contains(document.activeElement)) notesButton.focus();
+      }
+
+      function showStatus(message) {
+        const status = document.getElementById("status");
+        status.textContent = message;
+        status.hidden = false;
+        clearTimeout(statusTimeout);
+        statusTimeout = setTimeout(() => { status.hidden = true; }, 7000);
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen();
+          else showStatus("Fullscreen is unavailable in this browser. Use your browser's presentation or fullscreen command.");
+        } catch (error) {
+          console.error("Fullscreen request failed:", error);
+          showStatus("Fullscreen was blocked. Use your browser's fullscreen command instead.");
+        }
+      }
+
+      previous.addEventListener("click", () => go(current - 1));
+      next.addEventListener("click", () => go(current + 1));
+      notesButton.addEventListener("click", () => toggleNotes());
+      document.getElementById("notes-close").addEventListener("click", () => toggleNotes(false));
+      document.getElementById("overview-button").addEventListener("click", () => overview.showModal());
+      document.getElementById("help-button").addEventListener("click", () => help.showModal());
+      fullscreenButton.addEventListener("click", toggleFullscreen);
+      document.querySelectorAll("[data-close]").forEach(button => {
+        button.addEventListener("click", () => button.closest("dialog").close());
+      });
+      document.querySelector(".brand").addEventListener("click", event => {
+        event.preventDefault();
+        go(0, { focus: true });
+      });
+      document.addEventListener("fullscreenchange", () => {
+        const active = Boolean(document.fullscreenElement);
+        fullscreenButton.textContent = active ? "Exit" : "Full";
+        fullscreenButton.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+      });
+      document.addEventListener("keydown", event => {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        if (document.querySelector("dialog[open]")) return;
+        if (event.target.closest("input, textarea, select, [contenteditable='true']")) return;
+        if (event.key === "Escape") { toggleNotes(false); return; }
+        if (event.target.closest("button, a, summary") && (event.key === " " || event.key === "Enter")) return;
+        switch (event.key) {
+          case "ArrowRight": case "PageDown": event.preventDefault(); go(current + 1); break;
+          case "ArrowLeft": case "PageUp": event.preventDefault(); go(current - 1); break;
+          case " ": event.preventDefault(); go(current + (event.shiftKey ? -1 : 1)); break;
+          case "Home": event.preventDefault(); go(0); break;
+          case "End": event.preventDefault(); go(mainSlideCount - 1); break;
+          case "n": case "N": event.preventDefault(); toggleNotes(); break;
+          case "o": case "O": event.preventDefault(); overview.showModal(); break;
+          case "f": case "F": event.preventDefault(); void toggleFullscreen(); break;
+          case "?": event.preventDefault(); help.showModal(); break;
+        }
+      });
+      document.getElementById("deck").addEventListener("touchstart", event => {
+        if (event.touches.length !== 1 || event.target.closest("a, button")) { touchStart = null; return; }
+        touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+      }, { passive: true });
+      document.getElementById("deck").addEventListener("touchend", event => {
+        if (!touchStart || event.changedTouches.length !== 1) return;
+        const dx = event.changedTouches[0].clientX - touchStart.x;
+        const dy = event.changedTouches[0].clientY - touchStart.y;
+        touchStart = null;
+        if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.7) go(current + (dx < 0 ? 1 : -1));
+      }, { passive: true });
+      document.getElementById("deck").addEventListener("touchcancel", () => { touchStart = null; }, { passive: true });
+      window.addEventListener("hashchange", readHash);
+      window.addEventListener("popstate", readHash);
+      readHash();
+    })();
+  </script>
+</body>
+</html>
