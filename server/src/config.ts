@@ -19,7 +19,15 @@ export interface AppConfig {
 }
 
 export function getConfig(): AppConfig {
-  const provider = process.env.MODEL_PROVIDER === 'foundry' ? 'foundry' : 'mock'
+  const provider = process.env.MODEL_PROVIDER ?? (process.env.NODE_ENV === 'production' ? 'foundry' : 'mock')
+  if (provider !== 'mock' && provider !== 'foundry') throw new Error('Invalid MODEL_PROVIDER.')
+  if (process.env.NODE_ENV === 'production' && provider !== 'foundry' && process.env.DEPLOYMENT_SMOKE !== 'true') {
+    throw new Error('Production requires live Foundry.')
+  }
+  if (process.env.WORKSHOP_ENDS_AT && (!process.env.WORKSHOP_ENDS_AT.endsWith('Z') || !Number.isFinite(Date.parse(process.env.WORKSHOP_ENDS_AT)))) {
+    throw new Error('WORKSHOP_ENDS_AT must be a valid UTC timestamp ending in Z.')
+  }
+  if (process.env.WORKSHOP_CLOSED && !['true', 'false'].includes(process.env.WORKSHOP_CLOSED)) throw new Error('Invalid WORKSHOP_CLOSED.')
   const config: AppConfig = {
     provider,
     optionsAgentName: process.env.FOUNDRY_OPTIONS_AGENT_NAME ?? 'decision-options-agent',

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import { api, ApiError } from './api'
 
 type Language = 'en' | 'el'
 type OptionId = 'A' | 'B' | 'C'
@@ -50,7 +51,7 @@ const copy = {
     kicker: 'SKILL UP FORUM / ATHENS 2026',
     title: 'Decide before the model does.',
     intro: 'A short experiment in human judgment versus AI judgment.',
-    privacy: 'Your written answer is used once for the comparison. It is never stored or shown to anyone else.',
+    privacy: 'Do not enter confidential information. Your raw answer is not saved by this app. Your scenario and AI results are kept temporarily for this workshop; the AI service also processes your input.',
     begin: 'Start',
     company: 'Northstar Services',
     scenarioTitle: 'Customer-support AI rollout',
@@ -88,7 +89,7 @@ const copy = {
     back: 'Back',
     live: 'LIVE FOUNDRY',
     mock: 'MOCK MODE',
-    error: 'Something failed. Check the local API and try again.',
+    error: 'The service is temporarily unavailable. Please try again shortly.',
     facilitator: 'Facilitator dashboard',
     responses: 'Responses',
     alignment: 'Matched model',
@@ -110,7 +111,7 @@ const copy = {
     kicker: 'SKILL UP FORUM / ΑΘΗΝΑ 2026',
     title: 'Αποφάσισε πριν το μοντέλο.',
     intro: 'Ένα σύντομο πείραμα ανθρώπινης κρίσης απέναντι στην κρίση της AI.',
-    privacy: 'Η απάντησή σου χρησιμοποιείται μία φορά για τη σύγκριση. Δεν αποθηκεύεται και δεν εμφανίζεται σε κανέναν.',
+    privacy: 'Μην εισάγεις εμπιστευτικές πληροφορίες. Η εφαρμογή δεν αποθηκεύει την αρχική απάντηση. Το σενάριο και τα αποτελέσματα AI διατηρούνται προσωρινά για το εργαστήριο. Η υπηρεσία AI επίσης επεξεργάζεται την είσοδό σου.',
     begin: 'Έναρξη',
     company: 'Northstar Services',
     scenarioTitle: 'Εισαγωγή AI στην εξυπηρέτηση πελατών',
@@ -148,7 +149,7 @@ const copy = {
     back: 'Πίσω',
     live: 'LIVE FOUNDRY',
     mock: 'MOCK',
-    error: 'Κάτι απέτυχε. Έλεγξε το τοπικό API και δοκίμασε ξανά.',
+    error: 'Η υπηρεσία δεν είναι διαθέσιμη προσωρινά. Δοκίμασε ξανά σε λίγο.',
     facilitator: 'Πίνακας συντονιστή',
     responses: 'Απαντήσεις',
     alignment: 'Ταίριαξαν με το μοντέλο',
@@ -199,6 +200,8 @@ function App() {
   const [dashboard, setDashboard] = useState<Dashboard>(emptyDashboard)
   const [health, setHealth] = useState<Health | null>(null)
   const [error, setError] = useState('')
+  const [usage, setUsage] = useState<{ remaining: number; limit: number } | null>(null)
+  const [closed, setClosed] = useState(false)
   const facilitator = window.location.pathname.startsWith('/facilitator')
   const t = copy[language]
 
@@ -207,24 +210,31 @@ function App() {
   }, [language])
 
   useEffect(() => {
-    void fetch('/api/health')
-      .then((response) => response.json())
-      .then((value: Health) => setHealth(value))
+    void api<Health>('/api/health', language)
+      .then(setHealth)
       .catch(() => setHealth(null))
-  }, [])
+    void api<{ remaining: number; limit: number }>('/api/usage', language)
+      .then(setUsage)
+      .catch((failure: unknown) => {
+        setClosed(failure instanceof ApiError && failure.code === 'WORKSHOP_CLOSED')
+        setError(failure instanceof Error ? failure.message : copy[language].error)
+      })
+  }, [language])
 
   useEffect(() => {
     if (!facilitator) return
     const refresh = () => {
-      void fetch('/api/dashboard')
-        .then((response) => response.json())
-        .then((value: Dashboard) => setDashboard(value))
-        .catch(() => undefined)
+      void api<Dashboard>('/api/dashboard', language)
+        .then(setDashboard)
+        .catch((failure: unknown) => {
+          setClosed(failure instanceof ApiError && failure.code === 'WORKSHOP_CLOSED')
+          setError(failure instanceof Error ? failure.message : copy[language].error)
+        })
     }
     refresh()
     const timer = window.setInterval(refresh, 3000)
     return () => window.clearInterval(timer)
-  }, [facilitator])
+  }, [facilitator, language])
 
   const reset = () => {
     setStage('landing')
@@ -232,6 +242,7 @@ function App() {
     setCaseKind('support')
     setCustomScenario('')
     setSelectedOption(null)
+    setGenerated(null)
     setRanking(null)
     setError('')
   }
@@ -240,18 +251,22 @@ function App() {
     setStage('generating')
     setError('')
     try {
-      const response = await fetch('/api/sessions', {
+      const value = await api<GeneratedSession>('/api/sessions', language, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'idempotency-key': crypto.randomUUID() },
         body: JSON.stringify({ language, userAnswer, caseId: caseKind, customScenario }),
       })
-      if (!response.ok) throw new Error(await response.text())
-      setGenerated((await response.json()) as GeneratedSession)
+      setGenerated(value)
       setStage('compare')
     } catch (requestError) {
-      console.error(requestError)
-      setError(t.error)
+      setClosed(requestError instanceof ApiError && requestError.code === 'WORKSHOP_CLOSED')
+      setError(requestError instanceof Error ? requestError.message : t.error)
       setStage('answer')
+    } finally {
+      void api<{ remaining: number; limit: number }>('/api/usage', language).then(setUsage).catch((failure: unknown) => {
+        if (failure instanceof ApiError && failure.code === 'WORKSHOP_CLOSED') setClosed(true)
+        else setError(failure instanceof Error ? failure.message : t.error)
+      })
     }
   }
 
@@ -260,25 +275,30 @@ function App() {
     setStage('ranking')
     setError('')
     try {
-      const response = await fetch(`/api/sessions/${generated.sessionId}/select`, {
+      const value = await api<{ ranking: Ranking; dashboard: Dashboard }>(`/api/sessions/${generated.sessionId}/select`, language, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ selectedOption }),
       })
-      if (!response.ok) throw new Error(await response.text())
-      const value = (await response.json()) as { ranking: Ranking; dashboard: Dashboard }
       setRanking(value.ranking)
       setDashboard(value.dashboard)
       setStage('result')
     } catch (requestError) {
-      console.error(requestError)
-      setError(t.error)
+      setClosed(requestError instanceof ApiError && requestError.code === 'WORKSHOP_CLOSED')
+      setError(requestError instanceof Error ? requestError.message : t.error)
       setStage('choose')
     }
   }
 
+  if (closed) {
+    return <main className="app-shell"><Screen code="WORKSHOP CLOSED" title={language === 'en' ? 'Thank you for taking part.' : 'Ευχαριστούμε για τη συμμετοχή.'}>
+      <p className="scenario">{language === 'en' ? 'The live workshop has ended. The presentation and public source code remain available.' : 'Το ζωντανό εργαστήριο ολοκληρώθηκε. Η παρουσίαση και ο δημόσιος κώδικας παραμένουν διαθέσιμα.'}</p>
+      <p><a href="https://rodanthi-alexiou.github.io/ai-decision-workshop/">Slides</a> / <a href="https://github.com/rodanthi-alexiou/ai-decision-workshop">Source code</a></p>
+      <button className="language" onClick={() => setLanguage(language === 'en' ? 'el' : 'en')}>{language === 'en' ? 'ΕΛ' : 'EN'}</button>
+    </Screen></main>
+  }
   if (facilitator) {
-    return <FacilitatorView dashboard={dashboard} language={language} setLanguage={setLanguage} />
+    return <>{error && <ErrorPanel text={error} />}<FacilitatorView dashboard={dashboard} language={language} setLanguage={setLanguage} /></>
   }
 
   const active = tabIndex[stage]
@@ -296,13 +316,15 @@ function App() {
         </button>
         <div className="top-actions">
           <span className={`model-pill ${health?.modelProvider === 'foundry' ? 'live' : ''}`}>
-            {health?.modelProvider === 'foundry' ? t.live : t.mock}
+            {health ? (health.modelProvider === 'foundry' ? t.live : t.mock) : 'CONNECTING'}
           </span>
           <button className="language" onClick={() => setLanguage(language === 'en' ? 'el' : 'en')}>
             {language === 'en' ? 'ΕΛ' : 'EN'}
           </button>
         </div>
       </header>
+      {usage && <p className="hint" role="status">{language === 'en' ? `${usage.remaining} of ${usage.limit} journeys remaining in this browser. One journey at a time.` : `${usage.remaining} από ${usage.limit} προσπάθειες απομένουν σε αυτόν τον browser. Μία προσπάθεια κάθε φορά.`}</p>}
+      {error && stage === 'landing' && <ErrorPanel text={error} />}
 
       {stage === 'landing' && (
         <section className="landing">

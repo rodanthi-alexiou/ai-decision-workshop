@@ -40,3 +40,9 @@ flowchart TB
 **What to watch for:** Did AI expand your options? Did its ranking influence you? What evidence would justify changing your mind?
 
 **Why this order matters:** You commit before seeing AI-generated options, and choose before seeing the model's ranking. Your selected option is not included in the independent scoring request. A model score is input to your judgment, not a verdict.
+
+## After the live experiment
+
+Return to the presentation's technical bridge (`#slide-12`), then Action Items (`#slide-13`). The technical slide distinguishes reasoning/advisory models from closed-choice evaluation and introduces approved retrieval and read-only tools. The Action Items turn the workshop into a small, measured Azure AI / Microsoft Foundry pilot.
+
+App access is limited to the workshop. Before sharing the app link, configure and announce the exact closing time. The deployment must enforce closure on the backend, not just remove the link or hide the UI. Keep the static presentation and public source code available afterwards. Closure is a deployment requirement, not a control currently implemented in the local app.

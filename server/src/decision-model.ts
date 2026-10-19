@@ -1,6 +1,7 @@
 import { DefaultAzureCredential } from '@azure/identity'
 import type { AppConfig } from './config.js'
 import { cases, rubric, type CaseKind, type DecisionOption, type OptionId } from './cases.js'
+import type { ModelOperation } from './model-operation.js'
 
 export interface RankedOption extends DecisionOption {
   probability: number
@@ -61,6 +62,7 @@ export async function rankOptions(
   caseId: CaseKind,
   scenario: string,
   options: [DecisionOption, DecisionOption, DecisionOption],
+  operation?: ModelOperation,
 ): Promise<RankingResult> {
   if (config.provider === 'mock') return createMockRanking(caseId, options)
   if (!config.resourceEndpoint) throw new Error('Foundry resource endpoint is not configured.')
@@ -72,6 +74,7 @@ export async function rankOptions(
   const token = await new DefaultAzureCredential().getToken(
     'https://cognitiveservices.azure.com/.default',
   )
+  operation?.beforeInference()
   const response = await fetch(
     `${config.resourceEndpoint}/providers/microsoft/v1/systemone`,
     {
@@ -98,7 +101,7 @@ export async function rankOptions(
           },
         },
       }),
-      signal: AbortSignal.timeout(30_000),
+      signal: operation?.signal ?? AbortSignal.timeout(30_000),
     },
   )
   if (!response.ok) {

@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AppConfig } from './config.js'
 import { cases, type CaseKind, type DecisionOption, type Language } from './cases.js'
+import type { ModelOperation } from './model-operation.js'
 
 export interface OptionsRequest {
   caseId: CaseKind
@@ -56,7 +57,7 @@ function validateOptions(value: unknown): {
 } {
   if (!value || typeof value !== 'object') throw new Error('The options agent returned invalid JSON.')
   const candidate = value as { restatement?: unknown; options?: unknown }
-  if (typeof candidate.restatement !== 'string' || !Array.isArray(candidate.options)) {
+  if (typeof candidate.restatement !== 'string' || candidate.restatement.length > 1500 || !Array.isArray(candidate.options)) {
     throw new Error('The options agent response is missing restatement or options.')
   }
   if (candidate.options.length !== 3) throw new Error('The options agent must return exactly three options.')
@@ -67,7 +68,8 @@ function validateOptions(value: unknown): {
     if (
       record.id !== ids[index] ||
       typeof record.title !== 'string' ||
-      typeof record.description !== 'string'
+      typeof record.description !== 'string' ||
+      record.title.length > 200 || record.description.length > 1500
     ) {
       throw new Error(`Option ${ids[index]} is invalid.`)
     }
@@ -116,18 +118,21 @@ export function createMockOptions(input: OptionsRequest): OptionsResult {
 export async function generateOptions(
   config: AppConfig,
   input: OptionsRequest,
+  operation?: ModelOperation,
 ): Promise<OptionsResult> {
   if (config.provider === 'mock') return createMockOptions(input)
   if (!config.projectEndpoint) throw new Error('Foundry project endpoint is not configured.')
 
   const { scenario, prompt } = getInput(input)
   const project = new AIProjectClient(config.projectEndpoint, new DefaultAzureCredential())
-  const agent = await project.agents.get(config.optionsAgentName)
+  const agent = await project.agents.get(config.optionsAgentName, operation ? { abortSignal: operation.signal } : {})
   if (!agent.agent_endpoint) {
     throw new Error(`Prompt agent "${config.optionsAgentName}" has no agent endpoint.`)
   }
   const openai = project.getOpenAIClient({
     azureConfig: { allowPreview: true, agentName: config.optionsAgentName },
+    maxRetries: 0,
+    timeout: 60_000,
   })
   const conversation = await openai.conversations.create({
     items: [
@@ -142,10 +147,14 @@ export async function generateOptions(
         }),
       },
     ],
-  })
+  }, operation ? { signal: operation.signal } : {})
 
   try {
-    let response = await openai.responses.create({ conversation: conversation.id })
+    operation?.beforeInference()
+    let response = await openai.responses.create(
+      { conversation: conversation.id, max_output_tokens: 3500, reasoning: { effort: 'low' } },
+      { ...(operation ? { signal: operation.signal } : {}) },
+    )
     let content = response.output_text?.trim()
     if (!content) throw new Error('The options agent returned no content.')
     let result
@@ -161,8 +170,12 @@ export async function generateOptions(
               'Your previous response did not match the required JSON schema. Return only corrected, valid JSON with restatement and exactly three options labelled A, B, and C.',
           },
         ],
-      })
-      response = await openai.responses.create({ conversation: conversation.id })
+      }, operation ? { signal: operation.signal } : {})
+      operation?.beforeInference()
+      response = await openai.responses.create(
+        { conversation: conversation.id, max_output_tokens: 3500, reasoning: { effort: 'low' } },
+        { ...(operation ? { signal: operation.signal } : {}) },
+      )
       content = response.output_text?.trim()
       if (!content) throw new Error('The options agent returned no content after schema correction.')
       try {
@@ -177,6 +190,6 @@ export async function generateOptions(
     }
     return { scenario, prompt, ...result, isMock: false }
   } finally {
-    await openai.conversations.delete(conversation.id)
+    await openai.conversations.delete(conversation.id, { signal: AbortSignal.timeout(5000) })
   }
 }

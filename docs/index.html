@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="The Decision Room: a 14-minute presentation on AI, judgment and the decisions you still own. Research, real cases and a hands-on experiment.">
+  <meta name="description" content="The Decision Room: a 13-minute opening on AI and judgment, a hands-on workshop, and a 3.5-minute Azure AI technical guide and action plan.">
   <meta name="color-scheme" content="dark light">
   <title>The Decision Room | Decide before the model does</title>
   <script>
@@ -247,6 +247,19 @@
     .end-line { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-top: 2vh; }
     .end-line p { font-size: clamp(19px, 2vw, 30px); margin: 0; }
     .signal-label { padding: 18px 24px; color: var(--cp-accent-fg); background: var(--cp-accent); font-family: var(--cp-mono); font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
+    .follow-through h2 { font-size: clamp(40px, 4.5vw, 76px); }
+    .follow-through .source { font-size: 12px; }
+    .model-pair, .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .model-card, .action-card { border: 1px solid var(--cp-border); padding: 20px 24px; background: var(--cp-surface); }
+    .model-card .eyebrow, .action-card .eyebrow { margin-bottom: 12px; }
+    .model-card h3, .action-card h3 { font-size: clamp(23px, 2.1vw, 34px); margin-bottom: 10px; }
+    .model-card p:last-child, .action-card p:last-child { color: var(--cp-text-muted); font-size: clamp(16px, 1.35vw, 22px); line-height: 1.4; margin-bottom: 0; }
+    .context-flow { list-style: none; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; padding: 0; margin: 24px 0 0; }
+    .context-flow li { position: relative; border-top: 1px solid var(--cp-border-strong); padding: 14px 12px 0 0; }
+    .context-flow li:not(:last-child)::after { content: "\2192"; position: absolute; right: -18px; top: 12px; color: var(--cp-accent); font-size: 24px; }
+    .context-flow strong { display: block; font-size: clamp(18px, 1.6vw, 25px); margin-bottom: 8px; }
+    .context-flow p { color: var(--cp-text-muted); font-size: clamp(15px, 1.2vw, 19px); line-height: 1.4; margin-bottom: 0; }
+    .workshop-window { margin: 20px 0 0; color: var(--cp-text-muted); font-size: clamp(16px, 1.35vw, 22px); line-height: 1.4; }
     .references { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 40px; padding: 0; list-style: none; }
     .references li { border-top: 1px solid var(--cp-border); padding-top: 14px; }
     .references strong { display: block; font-size: 18px; margin-bottom: 6px; }
@@ -298,6 +311,9 @@
       .journey { margin: 2vh 0; }
       .journey li { padding: 20px 16px; }
       .references { gap: 14px 32px; }
+      .follow-through h2 { font-size: clamp(38px, 4vw, 64px); }
+      .model-card, .action-card { padding: 16px 20px; }
+      .context-flow { margin-top: 18px; }
     }
     @media (max-width: 999px) {
       .slide { padding: 30px 6vw; }
@@ -352,6 +368,8 @@
       .three-questions p { font-size: 26px; margin-top: 8px; }
       .end-line { flex-direction: column; align-items: start; }
       .references { grid-template-columns: 1fr; }
+      .model-pair, .action-grid, .context-flow { grid-template-columns: 1fr; }
+      .context-flow li:not(:last-child)::after { display: none; }
       .controls { padding: 0 12px; gap: 5px; }
       .control { padding: 8px; min-width: 36px; }
       .counter { min-width: 55px; font-size: 10px; }
@@ -665,6 +683,82 @@
         <p>The habit for Monday: write your view before asking AI, ask for genuinely different alternatives, and identify what evidence would justify acting. We are not testing whether you can guess the model's favourite answer. We are testing whether you can keep ownership of your reasoning.</p>
         <p>Switch to the separately hosted workshop app now. GitHub Pages serves only this static deck; it cannot run the workshop's Node API or Foundry calls. This deck deliberately makes no API requests.</p>
         <p>For the debrief: the dashboard shows choices and model agreement, not decision accuracy. Options can differ across sessions, so aggregate A/B/C labels need not represent the same strategy.</p>
+        <p>After the live experiment, return to the next two slides for the technical bridge and Action Items. Tell attendees that app access is limited to the workshop; the presentation and public source code remain available afterwards.</p>
+      </template>
+    </section>
+
+    <section class="slide follow-through" id="slide-12" data-title="Technical: models, context and tools" data-duration="2:00" aria-labelledby="title-12" tabindex="-1" hidden>
+      <div class="slide-meta"><span>11 / TECHNICAL BRIDGE</span><span>RETURN HERE AFTER THE LIVE WORKSHOP</span></div>
+      <div class="content">
+        <p class="eyebrow">Azure AI / Microsoft Foundry</p>
+        <h2 id="title-12">A reasoning model needs<br><span class="accent">your business context.</span></h2>
+        <div class="model-pair">
+          <div class="model-card">
+            <p class="eyebrow">EXPLORE &amp; ADVISE</p>
+            <h3>GPT-5 family / o-series</h3>
+            <p>Generate alternatives, compare evidence and explain trade-offs. This workshop uses GPT-5-mini for options and comparison.</p>
+          </div>
+          <div class="model-card">
+            <p class="eyebrow">SCORE DEFINED CHOICES</p>
+            <h3>Microsoft-Decision-1</h3>
+            <p>Evaluate supplied options against a rubric. Not an open-ended advisor; a score is not a validated business-success probability.</p>
+          </div>
+        </div>
+        <ol class="context-flow" aria-label="Proposed business integration: retrieve evidence, call controlled tools, then require human approval">
+          <li><strong>01 / Ground the context</strong><p>Objectives, constraints and policies. Retrieve authorised documents with Azure AI Search (RAG).</p></li>
+          <li><strong>02 / Connect tools</strong><p>Approved APIs, function calling or MCP for current business data. Start read-only; validate results.</p></li>
+          <li><strong>03 / Keep control</strong><p>Return evidence and uncertainty. A named owner approves consequential actions; log and evaluate.</p></li>
+        </ol>
+      </div>
+      <p class="source">Integration pattern, not tools already wired into this demo. Availability varies by model, API and region. <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/reasoning" target="_blank" rel="noopener noreferrer">Reasoning models &#8599;</a> / <a href="https://ai.azure.com/catalog/models/Microsoft-Decision-1" target="_blank" rel="noopener noreferrer">Decision-1 &#8599;</a> / <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/toolbox-overview" target="_blank" rel="noopener noreferrer">Foundry tools &#8599;</a></p>
+      <template class="speaker-notes">
+        <p class="note-cue">TECHNICAL BRIDGE / 2 MINUTES / AFTER THE EXPERIMENT</p>
+        <p>Choose a model for the task, not a promise that it makes correct business decisions. Azure OpenAI reasoning models include GPT-5-family and o-series models. In this application, GPT-5-mini powers the options and comparison agents, while Microsoft-Decision-1 evaluates closed choices against our supplied rubric. Verify deployed agent versions before presenting the live demo.</p>
+        <p>Decision-1 is a specialised evaluator, not a conversational advisor and not a source of explanations. None of these outputs transfers accountability or demonstrates a calibrated probability of business success. Do not use a model as the sole decision-maker for consequential decisions about people.</p>
+        <p>Models do not automatically know your current policy, budget or CRM. Pass explicit goals and constraints, retrieve permitted source passages using retrieval-augmented generation (RAG), and attach source references and freshness information. Azure AI Search is one retrieval option; it is not required for the small workshop app and is not currently connected.</p>
+        <p>For live context, expose narrow tools such as get_current_wait_times or get_approved_budget through function calling, an authenticated API or a Model Context Protocol (MCP) server. The model proposes a tool call; the application authenticates, authorises and validates it, executes only allowed operations, and returns the result to the model. A tool schema is not permission to run anything.</p>
+        <p>Example: retrieve the customer-support policy, read the current queue and staffing figures, then compare a small pilot with a full rollout. Begin with read-only access. Treat retrieved text and tool results as untrusted data, not instructions. Require human approval before sending messages, changing records or spending money. Use least-privilege identity, enforce existing data permissions, redact sensitive traces and evaluate against representative cases.</p>
+        <p>The context/tool flow is a suggested next integration, not a claim that this demo already includes search or business-system access. Confirm supported tool types, model capabilities and regional availability in Microsoft Foundry. Technical sources checked 18 October 2026.</p>
+      </template>
+    </section>
+
+    <section class="slide follow-through" id="slide-13" data-title="Action Items: bring AI into one process" data-duration="1:30" aria-labelledby="title-13" tabindex="-1" hidden>
+      <div class="slide-meta"><span>12 / ACTION ITEMS</span><span>ONE PROCESS / ONE OWNER / ONE SMALL PILOT</span></div>
+      <div class="content">
+        <p class="eyebrow">Turn the workshop into a two-week experiment</p>
+        <h2 id="title-13">Start with a process.<br><span class="accent">Not a chatbot.</span></h2>
+        <div class="action-grid">
+          <div class="action-card">
+            <p class="eyebrow">01 / PICK &amp; BASELINE</p>
+            <h3>Choose one recurring decision.</h3>
+            <p>Name the process owner. Record today's time, quality and risk; define what must remain human.</p>
+          </div>
+          <div class="action-card">
+            <p class="eyebrow">02 / GROUND IN AZURE AI</p>
+            <h3>Connect approved context.</h3>
+            <p>Prototype in Microsoft Foundry. Bring one authorised data source; add read-only tools only where needed.</p>
+          </div>
+          <div class="action-card">
+            <p class="eyebrow">03 / TEST BEFORE TRUST</p>
+            <h3>Compare on real examples.</h3>
+            <p>Start with 20&ndash;30 de-identified cases. Measure errors, unsupported claims, time and cost against the baseline.</p>
+          </div>
+          <div class="action-card">
+            <p class="eyebrow">04 / PILOT WITH GUARDRAILS</p>
+            <h3>Keep a person accountable.</h3>
+            <p>Set approval, spend and stop rules. Review after two weeks; expand only if the evidence supports it.</p>
+          </div>
+        </div>
+        <p class="workshop-window"><strong class="accent">The app is workshop-only.</strong> Access closes afterwards. Keep the slides and public code; take the experiment into your own process.</p>
+      </div>
+      <p class="source">Suggested pilot design, not proof of effectiveness; 20&ndash;30 cases are an initial screen, not statistical validation. <a href="https://ai.azure.com/" target="_blank" rel="noopener noreferrer">Explore Azure AI / Microsoft Foundry &#8599;</a></p>
+      <template class="speaker-notes">
+        <p class="note-cue">CLOSE WITH A COMMITMENT / 90 SECONDS</p>
+        <p>Ask attendees to write down a process, an owner, a measurable baseline and one piece of context their AI would need. Examples include drafting a support response for approval, comparing project delivery options or triaging an internal request. Avoid starting with high-stakes automated decisions about people.</p>
+        <p>In the first week, map where a person decides, collect a small set of approved, de-identified examples and prototype assistance in Azure AI using Microsoft Foundry. Start with the smallest useful model and read-only data. Add retrieval or tools only when needed; no model automatically gains access to business systems.</p>
+        <p>In the second week, test against today's process. Record wrong or unsupported outputs, whether the reviewer catches them, time saved, latency and cost. Twenty to thirty examples are an initial exploratory screen, not proof of safety, fairness or production reliability. Add edge cases and a larger evaluation before scaling.</p>
+        <p>Name who approves an action, what the system must never do, the event or spending limit, and the condition for stopping. Decide whether to continue based on the results, not how impressive the demo looked.</p>
+        <p>The live app is available only during the workshop. The organiser must configure and announce its exact closing time before sharing the link. Afterwards, close backend access as well as the UI; hiding a link does not stop API requests. Keep this static presentation and public code available so attendees can learn without ongoing access to the paid demo.</p>
       </template>
     </section>
 
@@ -685,16 +779,16 @@
       <template class="speaker-notes">
         <p class="note-cue">REFERENCE ONLY / NO PLANNED TALK TIME</p>
         <p>Use this appendix for audience questions or sharing after the session. Each research slide also links directly to its source.</p>
-        <p>The main ten slides total thirteen minutes including brief audience pauses, excluding the live demo. For ten minutes, skip slide 2, shorten the Air Canada case and discuss the rubric during the demo.</p>
+        <p>The first ten slides total thirteen minutes including brief audience pauses, excluding the live demo. Return afterwards for the two-minute technical bridge and ninety-second Action Items: twelve main slides, sixteen and a half minutes of planned talk time in total. For a ten-minute opening, skip slide 2, shorten the Air Canada case and discuss the rubric during the demo.</p>
         <p>Publishing: the Deploy presentation to GitHub Pages workflow publishes only this file. Push changes under docs/ or to .github/workflows/deploy-pages.yml to main to redeploy, or run the workflow manually from the Actions tab on main. Repository Pages settings must use GitHub Actions as the source. Local edits are not published until committed and pushed.</p>
       </template>
     </section>
   </main>
 
   <footer class="controls" aria-label="Presentation controls">
-    <div class="progress" role="progressbar" aria-label="Slide progress" aria-valuemin="1" aria-valuemax="11" aria-valuenow="1"><span id="progress-fill"></span></div>
+    <div class="progress" role="progressbar" aria-label="Slide progress" aria-valuemin="1" aria-valuemax="13" aria-valuenow="1"><span id="progress-fill"></span></div>
     <button class="control" id="previous" type="button" aria-label="Previous slide" title="Previous slide (Left arrow)">&#8592;</button>
-    <span class="counter" id="counter" aria-hidden="true">01 / 11</span>
+    <span class="counter" id="counter" aria-hidden="true">01 / 13</span>
     <button class="control next" id="next" type="button" aria-label="Next slide" title="Next slide (Right arrow)">&#8594;</button>
     <span class="controls-spacer"></span>
     <span class="key-hint">ARROWS TO MOVE / N FOR NOTES</span>
@@ -710,7 +804,7 @@
   </aside>
 
   <dialog id="overview-dialog" aria-labelledby="overview-title">
-    <div class="dialog-header"><div><h2 id="overview-title">The whole journey.</h2><p>10 slides / 13 minutes + a sources appendix.</p></div><button class="control" data-close type="button" aria-label="Close slide overview">&times;</button></div>
+    <div class="dialog-header"><div><h2 id="overview-title">The whole journey.</h2><p>12 slides / 13-minute opening + workshop + 3.5-minute close; sources appendix.</p></div><button class="control" data-close type="button" aria-label="Close slide overview">&times;</button></div>
     <ol class="overview-list" id="overview-list"></ol>
   </dialog>
 
@@ -724,7 +818,7 @@
       <kbd>O</kbd><span>Open the slide overview, including the sources appendix.</span>
       <kbd>F</kbd><span>Enter / exit fullscreen, where supported by your browser.</span>
       <kbd>Esc</kbd><span>Close notes or a dialog.</span>
-      <kbd>Ctrl / Cmd + P</kbd><span>Print or save all 11 slides as a landscape PDF.</span>
+      <kbd>Ctrl / Cmd + P</kbd><span>Print or save all 13 slides as a landscape PDF.</span>
     </div>
     <p class="help-note">Share a specific slide using its URL, for example <code>#slide-4</code>. Swipe horizontally on touch devices. To use the light theme, append <code>?scoutTheme=light</code> before the slide hash. The deck defaults to the workshop's dark theme.</p>
     <p class="help-note">GitHub Pages hosts this presentation only. The live workshop needs its own backend hosting. External source links require an internet connection; slides, notes and controls do not.</p>

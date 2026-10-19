@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AppConfig } from './config.js'
 import type { DecisionOption, Language, OptionId } from './cases.js'
+import type { ModelOperation } from './model-operation.js'
 
 export interface CompareContext {
   language: Language
@@ -35,7 +36,7 @@ export async function readCompareInstructions(): Promise<string> {
 }
 
 function stringList(value: unknown, key: string): string[] {
-  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+  if (!Array.isArray(value) || value.length > 4 || value.some((item) => typeof item !== 'string' || item.length > 600)) {
     throw new Error(`The comparison agent returned an invalid ${key}.`)
   }
   return (value as string[]).map((item) => item.trim()).filter(Boolean).slice(0, 4)
@@ -45,7 +46,7 @@ function validateComparison(value: unknown): Omit<Comparison, 'isMock'> {
   if (!value || typeof value !== 'object') throw new Error('The comparison agent returned invalid JSON.')
   const record = value as Record<string, unknown>
   const { summary, insight, closestOption } = record
-  if (typeof summary !== 'string' || typeof insight !== 'string') {
+  if (typeof summary !== 'string' || typeof insight !== 'string' || summary.length > 1500 || insight.length > 1500) {
     throw new Error('The comparison agent response is missing summary or insight.')
   }
   const closest =
@@ -104,35 +105,42 @@ export function createMockComparison(input: CompareContext): Comparison {
   }
 }
 
-async function runAgent(config: AppConfig, payload: Record<string, unknown>): Promise<string> {
+async function runAgent(config: AppConfig, payload: Record<string, unknown>, operation?: ModelOperation): Promise<string> {
   if (!config.projectEndpoint) throw new Error('Foundry project endpoint is not configured.')
   const project = new AIProjectClient(config.projectEndpoint, new DefaultAzureCredential())
-  const agent = await project.agents.get(config.compareAgentName)
+  const agent = await project.agents.get(config.compareAgentName, operation ? { abortSignal: operation.signal } : {})
   if (!agent.agent_endpoint) {
     throw new Error(`Prompt agent "${config.compareAgentName}" has no agent endpoint.`)
   }
   const openai = project.getOpenAIClient({
     azureConfig: { allowPreview: true, agentName: config.compareAgentName },
+    maxRetries: 0,
+    timeout: 60_000,
   })
   const conversation = await openai.conversations.create({
     items: [{ type: 'message', role: 'user', content: JSON.stringify(payload) }],
-  })
+  }, operation ? { signal: operation.signal } : {})
   try {
-    const response = await openai.responses.create({ conversation: conversation.id })
+    operation?.beforeInference()
+    const response = await openai.responses.create(
+      { conversation: conversation.id, max_output_tokens: 3500, reasoning: { effort: 'low' } },
+      { ...(operation ? { signal: operation.signal } : {}) },
+    )
     const content = response.output_text?.trim()
     if (!content) throw new Error('The comparison agent returned no content.')
     return content
   } finally {
-    await openai.conversations.delete(conversation.id)
+    await openai.conversations.delete(conversation.id, { signal: AbortSignal.timeout(5000) })
   }
 }
 
 export async function compareAnswer(
   config: AppConfig,
   input: CompareContext,
+  operation?: ModelOperation,
 ): Promise<Comparison> {
   if (config.provider === 'mock') return createMockComparison(input)
-  const content = await runAgent(config, { ...input })
+  const content = await runAgent(config, { ...input }, operation)
   const json = content.trim().replace(/^```json\s*/i, '').replace(/\s*```$/, '')
   return { ...validateComparison(JSON.parse(json) as unknown), isMock: false }
 }

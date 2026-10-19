@@ -1,0 +1,150 @@
+name: Deploy Azure workshop
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      rollback_run_id:
+        description: Successful run ID containing the exact previous release (blank builds current main)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: ${{ !inputs.rollback_run_id }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
+      - name: Restore and validate
+        run: |
+          npm ci --no-audit --no-fund
+          npm ci --prefix server --no-audit --no-fund
+          npm ci --prefix client --no-audit --no-fund
+          npm run typecheck
+          npm test
+          npm run lint --prefix client
+          npm run build
+      - name: Package allowlisted production files
+        run: |
+          mkdir -p release/server release/client
+          cp package.json release/
+          cp server/package*.json release/server/
+          cp -r server/dist release/server/
+          rm -f release/server/dist/*.test.*
+          cp -r client/dist release/client/
+          cp -r prompts release/
+          npm ci --prefix release/server --omit=dev --no-audit --no-fund
+          printf '{"sha":"%s"}\n' "$GITHUB_SHA" > release/release.json
+          if find release -type f \( -name '.env*' -o -name '*.tfstate*' -o -name '*.pfx' \) | grep -q .; then
+            echo "::error::Forbidden deployment file"; exit 1
+          fi
+      - name: Smoke-start exact release
+        env:
+          NODE_ENV: production
+          MODEL_PROVIDER: mock
+          DEPLOYMENT_SMOKE: 'true'
+          BUILD_SHA: ${{ github.sha }}
+          PORT: '3001'
+        run: |
+          node release/server/dist/index.js > "$RUNNER_TEMP/smoke.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node scripts/smoke.mjs http://127.0.0.1:3001 "$GITHUB_SHA"
+          cd release && zip -qr ../app.zip .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: workshop-release
+          path: app.zip
+          retention-days: 14
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && (needs.build.result == 'success' || inputs.rollback_run_id != '') }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.AZURE_WEBAPP_URL }}
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    concurrency:
+      group: azure-workshop-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Validate release eligibility
+        id: eligibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ROLLBACK_RUN_ID: ${{ inputs.rollback_run_id }}
+        run: |
+          if [ -n "$ROLLBACK_RUN_ID" ]; then
+            [[ "$ROLLBACK_RUN_ID" =~ ^[0-9]+$ ]] || exit 1
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ROLLBACK_RUN_ID" > run.json
+            node -e 'const r=require("./run.json"); if(r.conclusion!=="success" || r.head_branch!=="main" || r.path!==".github/workflows/deploy-azure.yml" || !["push","workflow_dispatch"].includes(r.event)) process.exit(1)'
+            echo "run_id=$ROLLBACK_RUN_ID" >> "$GITHUB_OUTPUT"
+          else
+            latest=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+            if [ "$latest" != "$GITHUB_SHA" ]; then
+              echo "Superseded by newer main; not deploying."
+              echo "eligible=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "run_id=$GITHUB_RUN_ID" >> "$GITHUB_OUTPUT"
+          fi
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        if: steps.eligibility.outputs.eligible == 'true'
+        with:
+          name: workshop-release
+          run-id: ${{ steps.eligibility.outputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Read immutable release metadata
+        if: steps.eligibility.outputs.eligible == 'true'
+        id: release
+        run: |
+          unzip -p app.zip release.json > release.json
+          sha=$(node -p 'require("./release.json").sha')
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
+        if: steps.eligibility.outputs.eligible == 'true'
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Set release version without changing workshop controls
+        if: steps.eligibility.outputs.eligible == 'true'
+        env:
+          BUILD_SHA: ${{ steps.release.outputs.sha }}
+        run: az webapp config appsettings set -g "${{ vars.AZURE_RESOURCE_GROUP }}" -n "${{ vars.AZURE_WEBAPP_NAME }}" --settings "BUILD_SHA=$BUILD_SHA" --output none
+      - uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
+        if: steps.eligibility.outputs.eligible == 'true'
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          package: app.zip
+      - name: Verify live release, readiness and assets
+        if: steps.eligibility.outputs.eligible == 'true'
+        env:
+          BUILD_SHA: ${{ steps.release.outputs.sha }}
+          APP_URL: ${{ vars.AZURE_WEBAPP_URL }}
+        run: node scripts/smoke.mjs "$APP_URL" "$BUILD_SHA"
