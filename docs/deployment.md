@@ -32,6 +32,8 @@ The GitHub `production` environment allows deployments from `main` only. A separ
 
 Environment variables in GitHub: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_RESOURCE_GROUP`, `AZURE_WEBAPP_NAME`, `AZURE_WEBAPP_URL`. These identifiers are not secrets. Keep `.env` and credentials out of Git and release artifacts.
 
+The existing Dockerfile is not used by this native ZIP deployment. Container builds must supply `--build-arg BUILD_SHA=<40-character commit SHA>` to generate the required immutable `release.json`, and must provide the same live Foundry/durable-storage production configuration at runtime.
+
 ## Limits and privacy
 
 Defaults: **5 journey starts per browser/event**, **2 starts per rolling minute**, **1 active AI operation per browser**, **5 per process**, **1,000 reserved inference calls per event**. Each admitted journey reserves four calls, including one possible options repair; failures consume reservations. Thus at most 250 journeys fit the default event budget. Agent responses are capped at 8,000 output tokens, including reasoning; request bodies are bounded and inference retries are disabled. Existing agent reasoning configuration is preserved because Foundry rejects per-request reasoning overrides on named agents. Comparison displays retain up to four overlap/gap items.
@@ -39,6 +41,8 @@ Defaults: **5 journey starts per browser/event**, **2 starts per rolling minute*
 These are **browser limits, not verified per-person limits**. Private browsing, clearing cookies or another device gets another allowance. The event ceiling still applies. A common Wi-Fi IP does not combine attendees' allowances. Busy responses explicitly request a retry; the service does not queue unlimited work. Five active operations is an overload limit, not a guaranteed model-throughput or latency claim.
 
 The expected workshop size is about 50 attendees. With approval, the existing GlobalStandard allocations were raised to GPT-5-mini 100 requests/minute / 100K tokens/minute and Decision-1 30 requests/minute, preserving their model versions and agents. This allocates existing pay-per-token quota, not reserved PTUs. Five active operations still means attendees may need to retry in waves.
+
+Deployment rehearsal completed real English, Greek and custom journeys using runtime managed identity, both existing agents and Decision-1. Five parallel real journeys completed in approximately 21-31 seconds; the separate deterministic 50-browser overload test admitted five and returned busy responses to 45. These observations are not a latency SLA. Pause/close, restart persistence, private Table transactions/purge and exact-artifact rollback/restoration were also exercised. The attendee event is `workshop-20261018`; deployment rehearsal used a separate partition and allowance.
 
 Do not enter sensitive information. Raw answers are not persisted by this application, but are processed by Foundry and may be reflected in cached AI outputs. Scenarios/results expire for API access after 24 hours. Table Storage has no automatic TTL: an operator must purge expired sessions daily and purge the completed event after its retention window. Service-side AI data handling is separate from application storage.
 
@@ -60,6 +64,8 @@ Pause **new journeys only**, allowing admitted journeys to finish:
 .\infra\manage-workshop.ps1 -Action Resume -Apply
 .\infra\manage-workshop.ps1 -Action Status
 ```
+
+Pause/resume also wait for App Service settings propagation. A successful settings write is not proof the running process has switched; verify the requested behavior before relying on it.
 
 Stop the entire host:
 
@@ -98,6 +104,8 @@ node --input-type=module -e "const {AzureStore}=await import('./server/dist/stor
 `.github/workflows/deploy-azure.yml` checks PRs and automatically deploys successful `main` pushes. It uses pinned Actions, Node 24, lockfiles, existing tests/typechecks/lint, and an allowlisted production ZIP including prompts and production-only server dependencies. Azure CLI's Kudu ZIP Deploy with `WEBSITE_RUN_FROM_PACKAGE=1` mounts the immutable ZIP read-only instead of OneDeploy copying thousands of dependency files into the live directory. It smoke-starts the exact package on Linux before deploying it and verifies live readiness, commit SHA and built assets afterward. The live SHA comes from the package's immutable `release.json`, not merely an app setting that could change before deployment finishes. The separate Pages workflow remains independent.
 
 B1 has no deployment slots. Releases restart the app and can interrupt requests; avoid pushes during the exercise. An interrupted admitted attempt is not replayed or refunded automatically.
+
+Wait for the GitHub deployment run to finish successfully before starting paid rehearsal. A new health SHA can become visible before the platform completes all deployment/restart work.
 
 Artifacts are retained for 14 days. To roll back, select a **successful previous run** of this workflow and supply its numeric run ID:
 

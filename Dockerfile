@@ -16,6 +16,9 @@ FROM node:24-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 
+ARG BUILD_SHA
+RUN node -e "const sha=process.env.BUILD_SHA; if(!/^[0-9a-f]{40}$/.test(sha||'')) throw new Error('Pass the commit SHA using --build-arg BUILD_SHA'); require('node:fs').writeFileSync('release.json',JSON.stringify({sha}))"
+
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev
 
