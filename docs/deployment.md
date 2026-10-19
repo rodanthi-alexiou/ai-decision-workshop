@@ -2,9 +2,11 @@
 
 The React app and Fastify API share one Azure App Service Linux B1 / Node 24 host. Azure Table Storage keeps browser allowances, expiring sessions and aggregate results across restarts. Runtime managed identity calls the **existing** Microsoft Foundry agents and Decision-1 deployment; no model or agent redeployment is needed.
 
+The subscription enforces private-only storage. App Service VNet integration, a Table private endpoint and private DNS provide the compliant path; the attendee web app remains public. Private endpoint/DNS add charges beyond B1 hosting. Do not enable public storage access or exempt the governance policy.
+
 ## Links and resources
 
-The deployment script prints the actual Azure hostname. The attendee link is its HTTPS root; `/facilitator` shows aggregate results, not private attendee responses.
+Attendee app: <https://app-decision-room-ralexiou-04dbd6.azurewebsites.net/>. `/facilitator` shows aggregate results, not private attendee responses. The infrastructure script also prints the actual Azure hostname.
 
 - Presentation: <https://rodanthi-alexiou.github.io/ai-decision-workshop/>
 - Source: <https://github.com/rodanthi-alexiou/ai-decision-workshop>
@@ -12,6 +14,7 @@ The deployment script prints the actual Azure hostname. The attendee link is its
 - Dedicated app: `app-decision-room-ralexiou-04dbd6`.
 - Dedicated B1 plan: `asp-decision-workshop`.
 - Dedicated LRS storage: `stdecisionroom04dbd6`, table `workshop`.
+- Dedicated VNet: `vnet-decision-workshop`, integration and private-endpoint subnets; private endpoint `pe-decision-workshop-table`.
 
 ## Initial setup
 
@@ -75,7 +78,7 @@ az webapp config appsettings set -g rg-decision-room-dev -n app-decision-room-ra
 .\infra\manage-workshop.ps1 -Action PurgeEvent -EventId your-completed-event -Apply
 ```
 
-Purge requires Storage Table Data Contributor for the operator, scoped to this storage account, and uses Entra authentication, not storage keys. PurgeExpired keeps quota/event counters; PurgeEvent removes the entire explicitly named event partition. Only purge completed events; deleting counters for an active event would reset its budget.
+Purge requires Storage Table Data Contributor for the operator, scoped to this storage account, and uses Entra authentication, not storage keys. **Run data-plane purge commands from an approved machine connected to this VNet**; an ordinary public workstation cannot access the private Table endpoint. PurgeExpired keeps quota/event counters; PurgeEvent removes the entire explicitly named event partition. Only purge completed events; deleting counters for an active event would reset its budget.
 
 ## Releases and rollback
 

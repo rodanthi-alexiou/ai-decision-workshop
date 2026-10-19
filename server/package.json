@@ -18,8 +18,7 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/static": "^10.1.5",
     "dotenv": "^17.2.3",
-    "fastify": "^5.8.2",
-    "the-decision-room": "file:.."
+    "fastify": "^5.8.2"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",

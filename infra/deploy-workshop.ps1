@@ -6,7 +6,8 @@ param(
     [string]$Location = 'swedencentral',
     [string]$AppName = 'app-decision-room-ralexiou-04dbd6',
     [string]$PlanName = 'asp-decision-workshop',
-    [string]$StorageName = 'stdecisionroom04dbd6'
+    [string]$StorageName = 'stdecisionroom04dbd6',
+    [string]$VnetName = 'vnet-decision-workshop'
 )
 $ErrorActionPreference = 'Stop'
 function Invoke-Az {
@@ -20,16 +21,30 @@ Invoke-Az group show --subscription $Subscription --name $ResourceGroup --output
 Invoke-Az resource show --ids "$account/projects/decision-room" --output none
 Write-Host "Target: $ResourceGroup ($Subscription), $Location"
 Write-Host "Add only: Linux B1 plan $PlanName, Node 24 app $AppName, Standard LRS Table storage $StorageName."
+Write-Host "Private storage path: $VnetName, app integration subnet, Table private endpoint and private DNS."
 Write-Host 'Reuse existing Foundry agents/models. No Terraform changes. B1 bills while its plan exists.'
 if (!$Apply) { Write-Host 'Preview only. Pass -Apply to create/configure dedicated hosting resources.'; return }
 
 Invoke-Az appservice plan create --subscription $Subscription --resource-group $ResourceGroup --name $PlanName --location $Location --is-linux --sku B1 --number-of-workers 1 --output none
-Invoke-Az storage account create --subscription $Subscription --resource-group $ResourceGroup --name $StorageName --location $Location --sku Standard_LRS --kind StorageV2 --allow-blob-public-access false --allow-shared-key-access false --https-only true --min-tls-version TLS1_2 --output none
+Invoke-Az storage account create --subscription $Subscription --resource-group $ResourceGroup --name $StorageName --location $Location --sku Standard_LRS --kind StorageV2 --allow-blob-public-access false --allow-shared-key-access false --https-only true --min-tls-version TLS1_2 --public-network-access Disabled --default-action Deny --output none
 $storage = (Invoke-Az storage account show --subscription $Subscription --resource-group $ResourceGroup --name $StorageName --output json) | ConvertFrom-Json
 Invoke-Az resource create --id "$($storage.id)/tableServices/default/tables/workshop" --api-version 2023-05-01 --properties '{}' --output none
 Invoke-Az webapp create --subscription $Subscription --resource-group $ResourceGroup --plan $PlanName --name $AppName --runtime 'NODE:24-lts' --output none
 $identity = (Invoke-Az webapp identity assign --subscription $Subscription --resource-group $ResourceGroup --name $AppName --output json) | ConvertFrom-Json
 $app = (Invoke-Az webapp show --subscription $Subscription --resource-group $ResourceGroup --name $AppName --output json) | ConvertFrom-Json
+
+$vnetExists = Invoke-Az network vnet list --subscription $Subscription -g $ResourceGroup --query "[?name=='$VnetName'].id" --output tsv
+if (!$vnetExists) {
+    Invoke-Az network vnet create --subscription $Subscription -g $ResourceGroup -n $VnetName -l $Location --address-prefixes 10.73.0.0/16 --subnet-name app-integration --subnet-prefixes 10.73.1.0/26 --output none
+}
+Invoke-Az network vnet subnet update --subscription $Subscription -g $ResourceGroup --vnet-name $VnetName -n app-integration --delegations Microsoft.Web/serverFarms --output none
+Invoke-Az network vnet subnet create --subscription $Subscription -g $ResourceGroup --vnet-name $VnetName -n private-endpoints --address-prefixes 10.73.2.0/27 --private-endpoint-network-policies Disabled --output none
+Invoke-Az network private-endpoint create --subscription $Subscription -g $ResourceGroup -n pe-decision-workshop-table -l $Location --vnet-name $VnetName --subnet private-endpoints --private-connection-resource-id $storage.id --group-id table --connection-name workshop-table --output none
+$zoneName = 'privatelink.table.core.windows.net'
+Invoke-Az network private-dns zone create --subscription $Subscription -g $ResourceGroup -n $zoneName --output none
+Invoke-Az network private-dns link vnet create --subscription $Subscription -g $ResourceGroup -z $zoneName -n workshop-table-link --virtual-network "$scope/providers/Microsoft.Network/virtualNetworks/$VnetName" --registration-enabled false --output none
+Invoke-Az network private-endpoint dns-zone-group create --subscription $Subscription -g $ResourceGroup --endpoint-name pe-decision-workshop-table -n workshop --private-dns-zone "$scope/providers/Microsoft.Network/privateDnsZones/$zoneName" --zone-name table --output none
+Invoke-Az webapp vnet-integration add --subscription $Subscription -g $ResourceGroup -n $AppName --vnet $VnetName --subnet app-integration --output none
 
 Invoke-Az role assignment create --assignee-object-id $identity.principalId --assignee-principal-type ServicePrincipal --role 'Storage Table Data Contributor' --scope $storage.id --output none
 # Account-level inference covers Decision-1 as well as the project-scoped prompt agents.
