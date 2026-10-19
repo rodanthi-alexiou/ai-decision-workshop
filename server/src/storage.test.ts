@@ -4,6 +4,25 @@ import { TableClient } from '@azure/data-tables'
 import { DefaultAzureCredential } from '@azure/identity'
 import { AzureStore, Conflict, statusOf } from './store.js'
 
+it('refuses invalid partitions and purging an active open or unknown event', async () => {
+  assert.throws(() => new AzureStore('https://invalid.table.core.windows.net', "invalid'partition"), /Invalid workshop partition/)
+  const previousEvent = process.env.WORKSHOP_EVENT_ID
+  const previousClosed = process.env.WORKSHOP_CLOSED
+  try {
+    process.env.WORKSHOP_EVENT_ID = 'active-test'
+    process.env.WORKSHOP_CLOSED = 'false'
+    const store = new AzureStore('https://invalid.table.core.windows.net', 'active-test')
+    await assert.rejects(store.purgeEvent(), /Close or switch/)
+    delete process.env.WORKSHOP_EVENT_ID
+    await assert.rejects(store.purgeEvent(), /not configured/)
+  } finally {
+    if (previousEvent === undefined) delete process.env.WORKSHOP_EVENT_ID
+    else process.env.WORKSHOP_EVENT_ID = previousEvent
+    if (previousClosed === undefined) delete process.env.WORKSHOP_CLOSED
+    else process.env.WORKSHOP_CLOSED = previousClosed
+  }
+})
+
 it('proves real Azure Table ETag conflicts and atomic transaction rollback', {
   skip: !process.env.AZURE_TABLE_TEST_ENDPOINT,
 }, async () => {
@@ -30,8 +49,17 @@ it('proves real Azure Table ETag conflicts and atomic transaction rollback', {
     for (const result of contenders) {
       if (result.status === 'rejected') assert.ok(result.reason instanceof Conflict)
     }
+    await store.commit([
+      { key: 'expired', value: { expires: Date.now() - 1000 } },
+      { key: 'future', value: { expires: Date.now() + 86_400_000 } },
+    ])
+    assert.equal((await store.purgeExpired()).removed, 1)
+    assert.ok(await store.get('counter'))
+    assert.ok(await store.get('future'))
+    assert.equal((await store.purgeEvent()).removed, 2)
+    assert.equal(await store.get('counter'), undefined)
   } finally {
-    for (const key of ['counter', 'must-not-exist']) {
+    for (const key of ['counter', 'must-not-exist', 'expired', 'future']) {
       try { await client.deleteEntity(partition, key) } catch (error) {
         if (statusOf(error) !== 404) throw error
       }

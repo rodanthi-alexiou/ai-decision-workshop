@@ -36,7 +36,7 @@ export async function readCompareInstructions(): Promise<string> {
 }
 
 function stringList(value: unknown, key: string): string[] {
-  if (!Array.isArray(value) || value.length > 4 || value.some((item) => typeof item !== 'string' || item.length > 600)) {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string' || item.length > 600)) {
     throw new Error(`The comparison agent returned an invalid ${key}.`)
   }
   return (value as string[]).map((item) => item.trim()).filter(Boolean).slice(0, 4)
@@ -123,7 +123,7 @@ async function runAgent(config: AppConfig, payload: Record<string, unknown>, ope
   try {
     operation?.beforeInference()
     const response = await openai.responses.create(
-      { conversation: conversation.id, max_output_tokens: 3500, reasoning: { effort: 'low' } },
+      { conversation: conversation.id, max_output_tokens: 8000 },
       { ...(operation ? { signal: operation.signal } : {}) },
     )
     const content = response.output_text?.trim()

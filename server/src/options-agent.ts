@@ -152,7 +152,7 @@ export async function generateOptions(
   try {
     operation?.beforeInference()
     let response = await openai.responses.create(
-      { conversation: conversation.id, max_output_tokens: 3500, reasoning: { effort: 'low' } },
+      { conversation: conversation.id, max_output_tokens: 8000 },
       { ...(operation ? { signal: operation.signal } : {}) },
     )
     let content = response.output_text?.trim()
@@ -173,7 +173,7 @@ export async function generateOptions(
       }, operation ? { signal: operation.signal } : {})
       operation?.beforeInference()
       response = await openai.responses.create(
-        { conversation: conversation.id, max_output_tokens: 3500, reasoning: { effort: 'low' } },
+        { conversation: conversation.id, max_output_tokens: 8000 },
         { ...(operation ? { signal: operation.signal } : {}) },
       )
       content = response.output_text?.trim()

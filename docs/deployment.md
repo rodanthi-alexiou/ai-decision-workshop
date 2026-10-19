@@ -34,9 +34,11 @@ Environment variables in GitHub: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SU
 
 ## Limits and privacy
 
-Defaults: **5 journey starts per browser/event**, **2 starts per rolling minute**, **1 active AI operation per browser**, **5 per process**, **1,000 reserved inference calls per event**. Each admitted journey reserves four calls, including one possible options repair; failures consume reservations. Thus at most 250 journeys fit the default event budget. Output tokens and request bodies are bounded; inference retries are disabled.
+Defaults: **5 journey starts per browser/event**, **2 starts per rolling minute**, **1 active AI operation per browser**, **5 per process**, **1,000 reserved inference calls per event**. Each admitted journey reserves four calls, including one possible options repair; failures consume reservations. Thus at most 250 journeys fit the default event budget. Agent responses are capped at 8,000 output tokens, including reasoning; request bodies are bounded and inference retries are disabled. Existing agent reasoning configuration is preserved because Foundry rejects per-request reasoning overrides on named agents. Comparison displays retain up to four overlap/gap items.
 
 These are **browser limits, not verified per-person limits**. Private browsing, clearing cookies or another device gets another allowance. The event ceiling still applies. A common Wi-Fi IP does not combine attendees' allowances. Busy responses explicitly request a retry; the service does not queue unlimited work. Five active operations is an overload limit, not a guaranteed model-throughput or latency claim.
+
+The expected workshop size is about 50 attendees. With approval, the existing GlobalStandard allocations were raised to GPT-5-mini 100 requests/minute / 100K tokens/minute and Decision-1 30 requests/minute, preserving their model versions and agents. This allocates existing pay-per-token quota, not reserved PTUs. Five active operations still means attendees may need to retry in waves.
 
 Do not enter sensitive information. Raw answers are not persisted by this application, but are processed by Foundry and may be reflected in cached AI outputs. Scenarios/results expire for API access after 24 hours. Table Storage has no automatic TTL: an operator must purge expired sessions daily and purge the completed event after its retention window. Service-side AI data handling is separate from application storage.
 
@@ -79,6 +81,17 @@ az webapp config appsettings set -g rg-decision-room-dev -n app-decision-room-ra
 ```
 
 Purge requires Storage Table Data Contributor for the operator, scoped to this storage account, and uses Entra authentication, not storage keys. **Run data-plane purge commands from an approved machine connected to this VNet**; an ordinary public workstation cannot access the private Table endpoint. PurgeExpired keeps quota/event counters; PurgeEvent removes the entire explicitly named event partition. Only purge completed events; deleting counters for an active event would reset its budget.
+
+Alternatively, use the web app's authenticated **Development Tools > SSH** in Azure Portal. This runs inside the already-approved private network using runtime managed identity, without adding a VM or exposing an admin API:
+
+```bash
+cd /home/site/wwwroot
+node --input-type=module -e "const {AzureStore}=await import('./server/dist/store.js'); console.log(await new AzureStore(process.env.TABLE_ENDPOINT,'your-completed-event').purgeExpired())"
+# Destructive: removes all data in only the explicitly named completed event.
+node --input-type=module -e "const {AzureStore}=await import('./server/dist/store.js'); console.log(await new AzureStore(process.env.TABLE_ENDPOINT,'your-completed-event').purgeEvent())"
+```
+
+`purgeEvent()` refuses to remove the currently active open event. Keep the literal event argument intentional; do not substitute the active event merely to obtain more allowance.
 
 ## Releases and rollback
 

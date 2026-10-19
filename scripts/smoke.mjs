@@ -4,22 +4,23 @@ const base = process.argv[2] ?? 'http://127.0.0.1:3001'
 const expected = process.argv[3]
 const liveJourneys = process.argv.includes('--live-journeys')
 const get = async (path, init) => {
-  const response = await fetch(new URL(path, base), { ...init, signal: AbortSignal.timeout(90_000) })
+  const response = await fetch(new URL(path, base), { ...init, signal: AbortSignal.timeout(init?.method === 'POST' ? 90_000 : 15_000) })
   assert.equal(response.status, 200, `${path}: HTTP ${response.status}`)
   return response
 }
 let health
+const readinessDeadline = Date.now() + 180_000
 for (let attempt = 0; attempt < 30; attempt++) {
   try {
     health = await (await get('/api/health')).json()
     await get('/api/ready')
+    if (expected && expected !== '--live-journeys') assert.equal(health.build, expected)
     break
   } catch (error) {
-    if (attempt === 29) throw error
+    if (attempt === 29 || Date.now() >= readinessDeadline) throw error
     await new Promise(resolve => setTimeout(resolve, 5000))
   }
 }
-if (expected && expected !== '--live-journeys') assert.equal(health.build, expected)
 const html = await (await get('/')).text()
 const asset = html.match(/src="([^"]*\/assets\/[^"]+\.js)"/)?.[1]
 assert.ok(asset, 'Built JavaScript asset is referenced')

@@ -26,6 +26,13 @@ if ($Action -eq 'Stop') {
     Invoke-Az webapp stop --subscription $Subscription -g $ResourceGroup -n $AppName
     Write-Warning 'The web app is stopped, but B1 hosting still bills while the plan exists.'
 } elseif ($Action -in @('PurgeExpired', 'PurgeEvent')) {
+    if ($Action -eq 'PurgeEvent') {
+        $controls = (Invoke-Az webapp config appsettings list --subscription $Subscription -g $ResourceGroup -n $AppName --query "[?name=='WORKSHOP_EVENT_ID' || name=='WORKSHOP_CLOSED']" --output json) | ConvertFrom-Json
+        $activeEvent = ($controls | Where-Object name -eq 'WORKSHOP_EVENT_ID').value
+        $closed = ($controls | Where-Object name -eq 'WORKSHOP_CLOSED').value
+        if (!$activeEvent) { throw 'Active workshop event is not configured.' }
+        if ($EventId -eq $activeEvent -and $closed -ne 'true') { throw 'Close or switch the active event before purging it.' }
+    }
     $filter = "PartitionKey eq '$EventId'"
     do {
         $queryArgs = @('storage', 'entity', 'query', '--account-name', $StorageName, '--auth-mode', 'login', '--table-name', 'workshop', '--filter', $filter, '--output', 'json')
