@@ -57,7 +57,7 @@ foreach ($policy in @('scm', 'ftp')) {
 
 $existing = (Invoke-Az webapp config appsettings list --subscription $Subscription --resource-group $ResourceGroup --name $AppName --output json) | ConvertFrom-Json
 $settings = @(
-    'NODE_ENV=production', 'MODEL_PROVIDER=foundry', 'SCM_DO_BUILD_DURING_DEPLOYMENT=false',
+    'NODE_ENV=production', 'MODEL_PROVIDER=foundry', 'SCM_DO_BUILD_DURING_DEPLOYMENT=false', 'WEBSITE_RUN_FROM_PACKAGE=1',
     "CLIENT_ORIGIN=https://$($app.defaultHostName)", "TABLE_ENDPOINT=$($storage.primaryEndpoints.table)",
     'TABLE_NAME=workshop', 'JOURNEY_LIMIT=5', 'STARTS_PER_MINUTE=2', 'EVENT_REQUEST_LIMIT=1000',
     'MODEL_CONCURRENCY=5', 'FOUNDRY_PROJECT_ENDPOINT=https://aif-decision-room-dev.services.ai.azure.com/api/projects/decision-room',

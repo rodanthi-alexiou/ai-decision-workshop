@@ -137,7 +137,7 @@ jobs:
         if: steps.eligibility.outputs.eligible == 'true'
         env:
           BUILD_SHA: ${{ steps.release.outputs.sha }}
-        run: az webapp config appsettings set -g "${{ vars.AZURE_RESOURCE_GROUP }}" -n "${{ vars.AZURE_WEBAPP_NAME }}" --settings "BUILD_SHA=$BUILD_SHA" --output none
+        run: az webapp config appsettings set -g "${{ vars.AZURE_RESOURCE_GROUP }}" -n "${{ vars.AZURE_WEBAPP_NAME }}" --settings "BUILD_SHA=$BUILD_SHA" WEBSITE_RUN_FROM_PACKAGE=1 --output none
       - uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
         if: steps.eligibility.outputs.eligible == 'true'
         with:

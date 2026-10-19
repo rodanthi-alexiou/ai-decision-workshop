@@ -28,7 +28,7 @@ az login
 
 Preview is read-only. Apply preserves existing Foundry resources and existing event ID/closed settings. Runtime gets Storage Table Data Contributor on the storage account and Foundry User on the existing Foundry account (covering its project agents and Microsoft-model inference). Neither runtime nor deployment identity gets subscription Contributor. Publishing basic authentication is disabled.
 
-The GitHub `production` environment allows deployments from `main` only. A separate user-assigned deployment identity trusts only `repo:rodanthi-alexiou/ai-decision-workshop:environment:production` through GitHub OIDC and has Website Contributor only on this web app. No publish profile, API key or client secret is required.
+The GitHub `production` environment allows deployments from `main` only. A separate user-assigned deployment identity trusts the exact emitted subject `repo:rodanthi-alexiou@61449673/ai-decision-workshop@1423521874:environment:production` through GitHub OIDC and has Website Contributor only on this web app. The numeric identifiers are GitHub's immutable owner/repository IDs; keep the federation aligned with the actual token claims rather than assuming the legacy name-only format. No publish profile, API key or client secret is required.
 
 Environment variables in GitHub: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AZURE_RESOURCE_GROUP`, `AZURE_WEBAPP_NAME`, `AZURE_WEBAPP_URL`. These identifiers are not secrets. Keep `.env` and credentials out of Git and release artifacts.
 
@@ -82,7 +82,7 @@ Purge requires Storage Table Data Contributor for the operator, scoped to this s
 
 ## Releases and rollback
 
-`.github/workflows/deploy-azure.yml` checks PRs and automatically deploys successful `main` pushes. It uses pinned Actions, Node 24, lockfiles, existing tests/typechecks/lint, and an allowlisted production ZIP including prompts and production-only server dependencies. It smoke-starts the exact package on Linux before deploying it and verifies live readiness, commit SHA and built assets afterward. The separate Pages workflow remains independent.
+`.github/workflows/deploy-azure.yml` checks PRs and automatically deploys successful `main` pushes. It uses pinned Actions, Node 24, lockfiles, existing tests/typechecks/lint, and an allowlisted production ZIP including prompts and production-only server dependencies. `WEBSITE_RUN_FROM_PACKAGE=1` mounts the immutable ZIP read-only instead of copying thousands of dependency files into the live directory. It smoke-starts the exact package on Linux before deploying it and verifies live readiness, commit SHA and built assets afterward. The separate Pages workflow remains independent.
 
 B1 has no deployment slots. Releases restart the app and can interrupt requests; avoid pushes during the exercise. An interrupted admitted attempt is not replayed or refunded automatically.
 
