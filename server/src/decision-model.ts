@@ -73,6 +73,7 @@ export async function rankOptions(
   )
   const token = await new DefaultAzureCredential().getToken(
     'https://cognitiveservices.azure.com/.default',
+    operation ? { abortSignal: operation.signal } : {},
   )
   operation?.beforeInference()
   const response = await fetch(
@@ -105,8 +106,7 @@ export async function rankOptions(
     },
   )
   if (!response.ok) {
-    const details = await response.text()
-    throw new Error(`Decision-1 request failed (${response.status}): ${details.slice(0, 400)}`)
+    throw Object.assign(new Error('Decision model request failed.'), { status: response.status })
   }
   const payload = (await response.json()) as {
     answers?: { recommended_option?: DecisionChoiceAnswer }

@@ -2,6 +2,7 @@ import cors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
 import Fastify, { type FastifyRequest } from 'fastify'
 import { existsSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { type CaseKind, type Language, type OptionId } from './cases.js'
@@ -23,6 +24,18 @@ export async function buildApp(options: {
   generate?: typeof generateOptions; compare?: typeof compareAnswer; rank?: typeof rankOptions
 } = {}) {
   const config = options.config ?? getConfig()
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
+  const metadataPath = resolve(root, 'release.json')
+  let build = process.env.BUILD_SHA ?? 'local'
+  if (existsSync(metadataPath)) {
+    const metadata: unknown = JSON.parse(await readFile(metadataPath, 'utf8'))
+    if (!metadata || typeof metadata !== 'object' || !('sha' in metadata) || typeof metadata.sha !== 'string' || !/^[0-9a-f]{40}$/.test(metadata.sha)) {
+      throw new Error('Release metadata is invalid.')
+    }
+    build = metadata.sha
+  } else if (process.env.NODE_ENV === 'production' && process.env.DEPLOYMENT_SMOKE !== 'true') {
+    throw new Error('Production release metadata is required.')
+  }
   const endpoint = process.env.TABLE_ENDPOINT
   const eventId = process.env.WORKSHOP_EVENT_ID ?? 'workshop'
   if (!/^[a-zA-Z0-9-]{1,80}$/.test(eventId)) throw new Error('Invalid WORKSHOP_EVENT_ID.')
@@ -36,13 +49,14 @@ export async function buildApp(options: {
     eventRequests: positive('EVENT_REQUEST_LIMIT', 1000), concurrency: positive('MODEL_CONCURRENCY', 5),
   })
   const app = Fastify({ logger: options.logger ?? true, disableRequestLogging: true, bodyLimit: 16_384 })
-  app.setErrorHandler((error, _request, reply) => {
+  app.setErrorHandler((error, request, reply) => {
     if (error instanceof WorkshopError) {
       if (error.retryAfter) reply.header('retry-after', error.retryAfter)
       return reply.code(error.statusCode).send({ code: error.code, error: error.message, retryAfter: error.retryAfter })
     }
     const status = typeof error === 'object' && error !== null && 'statusCode' in error && typeof error.statusCode === 'number' && error.statusCode < 500 ? error.statusCode : 503
-    app.log.error({ status, errorType: error instanceof Error ? error.name : 'Unknown' }, 'Workshop request failed')
+    const upstreamStatus = typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number' ? error.status : undefined
+    app.log.error({ status, upstreamStatus, route: request.routeOptions.url, errorType: error instanceof Error ? error.name : 'Unknown' }, 'Workshop request failed')
     return reply.code(status).send({ code: status < 500 ? 'INVALID_REQUEST' : 'UNAVAILABLE', error: status < 500 ? 'Invalid request.' : 'The service is temporarily unavailable. Please try again.' })
   })
   const origin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173'
@@ -69,10 +83,10 @@ export async function buildApp(options: {
       reply.header('set-cookie', `workshop=${identity}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`)
     }
   })
-  app.get('/api/health', async () => ({ status: 'ok', modelProvider: config.provider, build: process.env.BUILD_SHA ?? 'local' }))
+  app.get('/api/health', async () => ({ status: 'ok', modelProvider: config.provider, build }))
   app.get('/api/ready', async () => {
     await store.ready()
-    return { status: 'ready', build: process.env.BUILD_SHA ?? 'local' }
+    return { status: 'ready', build }
   })
   app.get('/api/usage', async request => workshop.usage(token(request)))
   app.get('/api/dashboard', async () => workshop.dashboard())
@@ -142,7 +156,7 @@ export async function buildApp(options: {
       if (admitted) await workshop.release(identity, request.params.id)
     }
   })
-  const directory = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'client', 'dist')
+  const directory = resolve(root, 'client', 'dist')
   if (existsSync(directory)) {
     await app.register(fastifyStatic, { root: directory, wildcard: false })
     app.get('/*', (request, reply) => {

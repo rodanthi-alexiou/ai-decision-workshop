@@ -138,11 +138,9 @@ jobs:
         env:
           BUILD_SHA: ${{ steps.release.outputs.sha }}
         run: az webapp config appsettings set -g "${{ vars.AZURE_RESOURCE_GROUP }}" -n "${{ vars.AZURE_WEBAPP_NAME }}" --settings "BUILD_SHA=$BUILD_SHA" WEBSITE_RUN_FROM_PACKAGE=1 --output none
-      - uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
+      - name: Mount immutable ZIP through Kudu ZIP Deploy
         if: steps.eligibility.outputs.eligible == 'true'
-        with:
-          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
-          package: app.zip
+        run: az webapp deployment source config-zip -g "${{ vars.AZURE_RESOURCE_GROUP }}" -n "${{ vars.AZURE_WEBAPP_NAME }}" --src app.zip --timeout 900 --output none
       - name: Verify live release, readiness and assets
         if: steps.eligibility.outputs.eligible == 'true'
         env:

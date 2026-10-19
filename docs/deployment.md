@@ -82,7 +82,7 @@ Purge requires Storage Table Data Contributor for the operator, scoped to this s
 
 ## Releases and rollback
 
-`.github/workflows/deploy-azure.yml` checks PRs and automatically deploys successful `main` pushes. It uses pinned Actions, Node 24, lockfiles, existing tests/typechecks/lint, and an allowlisted production ZIP including prompts and production-only server dependencies. `WEBSITE_RUN_FROM_PACKAGE=1` mounts the immutable ZIP read-only instead of copying thousands of dependency files into the live directory. It smoke-starts the exact package on Linux before deploying it and verifies live readiness, commit SHA and built assets afterward. The separate Pages workflow remains independent.
+`.github/workflows/deploy-azure.yml` checks PRs and automatically deploys successful `main` pushes. It uses pinned Actions, Node 24, lockfiles, existing tests/typechecks/lint, and an allowlisted production ZIP including prompts and production-only server dependencies. Azure CLI's Kudu ZIP Deploy with `WEBSITE_RUN_FROM_PACKAGE=1` mounts the immutable ZIP read-only instead of OneDeploy copying thousands of dependency files into the live directory. It smoke-starts the exact package on Linux before deploying it and verifies live readiness, commit SHA and built assets afterward. The live SHA comes from the package's immutable `release.json`, not merely an app setting that could change before deployment finishes. The separate Pages workflow remains independent.
 
 B1 has no deployment slots. Releases restart the app and can interrupt requests; avoid pushes during the exercise. An interrupted admitted attempt is not replayed or refunded automatically.
 

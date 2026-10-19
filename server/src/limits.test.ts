@@ -121,7 +121,7 @@ describe('public API contracts', () => {
       assert.equal(response.body.includes('PRIVATE'), false)
     } finally { await app.close() }
   })
-  it('admits at most five active model operations from thirty simultaneous browsers', async () => {
+  it('admits at most five active model operations from fifty simultaneous browsers', async () => {
     let active = 0
     let peak = 0
     const app = await buildApp({
@@ -134,12 +134,12 @@ describe('public API contracts', () => {
       },
     })
     try {
-      const responses = await Promise.all(Array.from({ length: 30 }, () => app.inject({
+      const responses = await Promise.all(Array.from({ length: 50 }, () => app.inject({
         method: 'POST', url: '/api/sessions', headers: { 'idempotency-key': crypto.randomUUID() }, payload: body,
       })))
       assert.equal(peak, 5)
       assert.equal(responses.filter(response => response.statusCode === 200).length, 5)
-      assert.equal(responses.filter(response => response.statusCode === 503 && response.json().code === 'BUSY').length, 25)
+      assert.equal(responses.filter(response => response.statusCode === 503 && response.json().code === 'BUSY').length, 45)
     } finally { await app.close() }
   })
   it('performs one ranking and dashboard increment for concurrent duplicate selections', async () => {
