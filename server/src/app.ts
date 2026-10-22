@@ -13,6 +13,7 @@ import { generateOptions } from './options-agent.js'
 import { assertOpen, operation } from './model-operation.js'
 import { AzureStore, MemoryStore, type Store } from './store.js'
 import { Workshop, WorkshopError, type Limits } from './workshop.js'
+import { defaultRubric, rubricPresets, rubricSchema, validateRubric, type DecisionRubric } from './rubrics.js'
 
 function positive(name: string, fallback: number) {
   const value = Number(process.env[name] ?? fallback)
@@ -90,6 +91,9 @@ export async function buildApp(options: {
   })
   app.get('/api/usage', async request => workshop.usage(token(request)))
   app.get('/api/dashboard', async () => workshop.dashboard())
+  app.get<{ Querystring: { language?: Language } }>('/api/rubrics', {
+    schema: { querystring: { type: 'object', properties: { language: { type: 'string', enum: ['en', 'el'] } } } },
+  }, async request => ({ presets: rubricPresets(request.query.language) }))
   app.post<{
     Body: { language: Language; userAnswer: string; caseId?: CaseKind; customScenario?: string }
   }>('/api/sessions', {
@@ -119,7 +123,7 @@ export async function buildApp(options: {
       id = admission.id
       const result = await (options.generate ?? generateOptions)(config, { caseId, language, customScenario }, run.context)
       const comparison = await (options.compare ?? compareAnswer)(config, { language, scenario: result.scenario, userAnswer, options: result.options }, run.context)
-      const response = { sessionId: id, prompt: result.prompt, restatement: result.restatement, options: result.options, comparison, isMock: result.isMock }
+      const response = { sessionId: id, scenario: result.scenario, prompt: result.prompt, restatement: result.restatement, options: result.options, comparison, isMock: result.isMock }
       await workshop.ready(id, identity, result.scenario, result.options, response)
       return response
     } catch (error) {
@@ -131,20 +135,28 @@ export async function buildApp(options: {
       if (id) await workshop.release(identity, id)
     }
   })
-  app.post<{ Params: { id: string }; Body: { selectedOption: OptionId } }>('/api/sessions/:id/select', {
-    schema: { body: { type: 'object', required: ['selectedOption'], additionalProperties: false, properties: { selectedOption: { type: 'string', enum: ['A', 'B', 'C'] } } } },
+  app.post<{ Params: { id: string }; Body: { selectedOption: OptionId; rubric?: DecisionRubric } }>('/api/sessions/:id/select', {
+    schema: { body: { type: 'object', required: ['selectedOption'], additionalProperties: false, properties: {
+      selectedOption: { type: 'string', enum: ['A', 'B', 'C'] }, rubric: rubricSchema,
+    } } },
   }, async request => {
+    let selectedRubric: DecisionRubric
+    try {
+      selectedRubric = validateRubric(request.body.rubric ?? defaultRubric())
+    } catch (error) {
+      throw new WorkshopError(400, 'INVALID_RUBRIC', error instanceof Error ? error.message : 'Invalid rubric.')
+    }
     const identity = token(request)
     const release = workshop.acquire()
     const run = operation(1)
     let admitted = false
     try {
-      const selection = await workshop.select(request.params.id, identity, request.body.selectedOption)
+      const selection = await workshop.select(request.params.id, identity, request.body.selectedOption, selectedRubric)
       if (selection.cached) return { ranking: selection.cached, dashboard: await workshop.dashboard() }
       admitted = true
       const pending = selection.journey
       if (!pending.scenario || !pending.options) throw new Error('Admitted journey is incomplete.')
-      const ranking = await (options.rank ?? rankOptions)(config, pending.caseId, pending.scenario, pending.options, run.context)
+      const ranking = await (options.rank ?? rankOptions)(config, pending.caseId, pending.scenario, pending.options, run.context, selectedRubric)
       await workshop.complete(request.params.id, identity, request.body.selectedOption, ranking)
       return { ranking, dashboard: await workshop.dashboard() }
     } catch (error) {
