@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { api, ApiError } from './api'
+import { DecisionContext, RubricEditor } from './DecisionContext'
+import { isRubricValid, type DecisionRubric, type Evaluation } from './rubric'
 
 type Language = 'en' | 'el'
 type OptionId = 'A' | 'B' | 'C'
@@ -23,6 +25,7 @@ interface Comparison {
 
 interface GeneratedSession {
   sessionId: string
+  scenario: string
   options: [DecisionOption, DecisionOption, DecisionOption]
   comparison: Comparison
   isMock: boolean
@@ -33,6 +36,7 @@ interface Ranking {
   topOption: OptionId
   confidence: number
   isMock: boolean
+  evaluation?: Evaluation
 }
 
 interface Dashboard {
@@ -197,6 +201,7 @@ function App() {
   const [generated, setGenerated] = useState<GeneratedSession | null>(null)
   const [selectedOption, setSelectedOption] = useState<OptionId | null>(null)
   const [ranking, setRanking] = useState<Ranking | null>(null)
+  const [selectedRubric, setSelectedRubric] = useState<DecisionRubric | null>(null)
   const [dashboard, setDashboard] = useState<Dashboard>(emptyDashboard)
   const [health, setHealth] = useState<Health | null>(null)
   const [error, setError] = useState('')
@@ -244,6 +249,7 @@ function App() {
     setSelectedOption(null)
     setGenerated(null)
     setRanking(null)
+    setSelectedRubric(null)
     setError('')
   }
 
@@ -271,14 +277,14 @@ function App() {
   }
 
   const rank = async () => {
-    if (!generated || !selectedOption) return
+    if (!generated || !selectedOption || !isRubricValid(selectedRubric)) return
     setStage('ranking')
     setError('')
     try {
       const value = await api<{ ranking: Ranking; dashboard: Dashboard }>(`/api/sessions/${generated.sessionId}/select`, language, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ selectedOption }),
+        body: JSON.stringify({ selectedOption, rubric: selectedRubric }),
       })
       setRanking(value.ranking)
       setDashboard(value.dashboard)
@@ -304,7 +310,7 @@ function App() {
   const active = tabIndex[stage]
   const reached = stage === 'result' ? 3 : stage === 'choose' || stage === 'ranking' ? 2 : generated ? 1 : 0
   const goTo = (index: number) => {
-    if (stage === 'generating' || stage === 'ranking' || index > reached || index === 3) return
+    if (stage === 'generating' || stage === 'ranking' || stage === 'result' || index > reached || index === 3) return
     setStage((['answer', 'compare', 'choose'] as const)[index]!)
   }
 
@@ -348,7 +354,7 @@ function App() {
             <button
               key={label}
               className={`tab ${index === active ? 'active' : ''}`}
-              disabled={index > reached || index === 3}
+              disabled={index > reached || index === 3 || stage === 'result'}
               aria-current={index === active ? 'step' : undefined}
               onClick={() => goTo(index)}
             >
@@ -487,10 +493,11 @@ function App() {
               </button>
             ))}
           </div>
+          <RubricEditor language={language} value={selectedRubric} onChange={setSelectedRubric} />
           {error && <ErrorPanel text={error} />}
           <Actions>
             <button className="back" onClick={() => setStage('compare')}>← {t.back}</button>
-            <button className="primary" disabled={!selectedOption} onClick={() => void rank()}>
+            <button className="primary" disabled={!selectedOption || !isRubricValid(selectedRubric)} onClick={() => void rank()}>
               <span>{t.rank}</span><b>→</b>
             </button>
           </Actions>
@@ -522,6 +529,8 @@ function App() {
             {selectedOption === ranking.topOption ? t.matched : t.differed}
           </p>
           <Distribution dashboard={dashboard} label={t.group} />
+          {ranking.evaluation && <DecisionContext language={language} scenario={generated.scenario} options={generated.options}
+            evaluation={ranking.evaluation} isMock={ranking.isMock} />}
           <Actions>
             <button className="primary" onClick={reset}><span>{t.restart}</span><b>↺</b></button>
           </Actions>

@@ -1,0 +1,73 @@
+.rubric-panel, .decision-receipt {
+  margin-top: 40px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.rubric-panel h3, .decision-receipt h3 {
+  margin: 12px 0;
+  font-family: "Syne Variable", sans-serif;
+  font-size: clamp(24px, 3vw, 36px);
+  letter-spacing: -.04em;
+}
+.rubric-panel p, .decision-receipt p { line-height: 1.65; font-size: 12px; overflow-wrap: anywhere; }
+.rubric-panel > p, .decision-receipt header > p { max-width: 760px; }
+.rubric-panel small, .decision-receipt small { color: var(--muted); font-size: 11px; line-height: 1.6; }
+.rubric-panel label { display: grid; gap: 8px; font-size: 11px; }
+.rubric-panel input, .rubric-panel select, .rubric-panel textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  color: var(--paper);
+  border: 1px solid var(--muted);
+  background: var(--ink);
+  border-radius: 0;
+}
+.rubric-panel textarea { min-height: 78px; resize: vertical; }
+.rubric-preset { max-width: 440px; margin: 24px 0; }
+.criterion-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px auto; gap: 20px; align-items: start; padding: 20px 0; border-top: 1px solid var(--line); }
+.criterion-copy { display: grid; gap: 8px; }
+.criterion-copy p { margin: 0; color: var(--muted); }
+.criterion-weight input { font-family: var(--mono); font-size: 20px; }
+.rubric-total { margin: 24px 0; padding-top: 20px; border-top: 1px solid var(--muted); }
+.rubric-total > strong { display: flex; justify-content: space-between; gap: 16px; }
+.rubric-total.valid > strong { color: var(--signal); }
+.rubric-total p { max-width: 750px; }
+.context-flow { display: grid; grid-template-columns: 1fr 1.1fr 1.2fr .7fr; margin-top: 28px; border: 1px solid var(--line); }
+.context-flow article { min-width: 0; padding: 20px; border-right: 1px solid var(--line); background: var(--ink); }
+.context-flow article:last-child { border-right: 0; }
+.context-step { font-family: var(--mono); color: var(--signal); font-size: 10px; letter-spacing: .06em; }
+.context-flow h4 { margin: 18px 0; font-family: "Syne Variable", sans-serif; font-size: 20px; line-height: 1.1; }
+.context-flow ul { list-style: none; padding: 0; }
+.context-flow li { margin: 0 0 18px; font-size: 11px; overflow-wrap: anywhere; }
+.context-flow li p { font-size: 11px; margin-top: 6px; }
+.context-excerpt { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.context-flow details { margin-top: 16px; font-size: 11px; }
+.context-flow summary { color: var(--signal); }
+.receipt-criteria li > div:first-child { display: flex; justify-content: space-between; gap: 12px; }
+.receipt-criteria strong { color: var(--signal); white-space: nowrap; }
+.weight-track { height: 3px; margin: 10px 0; background: var(--line); }
+.weight-track i { display: block; height: 100%; background: var(--signal); }
+.context-model code { color: var(--signal); overflow-wrap: anywhere; font-size: 11px; }
+.context-source { color: var(--muted); }
+.context-excluded { padding: 18px 20px; border-left: 3px solid var(--orange); background: var(--ink); }
+.context-excluded strong { color: var(--orange); font-size: 12px; }
+.context-excluded p { margin-bottom: 0; }
+.decision-receipt details { margin-top: 24px; font-size: 12px; }
+.decision-receipt summary { cursor: pointer; padding: 8px 0; }
+.scoring-instructions { font-family: var(--mono); }
+.receipt-warning { padding: 16px; border: 1px solid var(--orange); color: var(--orange); }
+.rubric-panel :is(button, input, select, textarea):focus-visible, .decision-receipt summary:focus-visible { outline: 2px solid var(--signal); outline-offset: 4px; }
+.rubric-panel button:disabled { cursor: not-allowed; opacity: .4; }
+@media (max-width: 1000px) {
+  .context-flow { grid-template-columns: 1fr 1fr; }
+  .context-flow article { border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 600px) {
+  .rubric-panel, .decision-receipt { padding: 18px; }
+  .criterion-row { grid-template-columns: minmax(0, 1fr) 76px; gap: 12px; }
+  .criterion-row > button { grid-column: 1 / -1; justify-self: start; }
+  .context-flow { grid-template-columns: 1fr; }
+  .context-flow article { border-right: 0; }
+}

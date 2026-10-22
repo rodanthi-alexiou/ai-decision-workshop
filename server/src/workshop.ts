@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import type { CaseKind, DecisionOption, OptionId } from './cases.js'
 import type { RankingResult } from './decision-model.js'
+import { defaultRubric, type DecisionRubric } from './rubrics.js'
 import { Conflict, type Store, type Write } from './store.js'
 
 export class WorkshopError extends Error {
@@ -18,6 +19,7 @@ export interface Journey {
   leaseUntil: number; caseId: CaseKind; scenario?: string
   options?: [DecisionOption, DecisionOption, DecisionOption]
   response?: unknown; ranking?: RankingResult; selectedOption?: OptionId
+  rankingRubric?: DecisionRubric
 }
 const emptyEvent = (): Event => ({
   reserved: 0, responses: 0, selected: { A: 0, B: 0, C: 0 }, aligned: 0, confidence: 0,
@@ -108,13 +110,16 @@ export class Workshop {
       await this.store.commit([{ key: `session-${id}`, version: row.version, value: { ...row.value, state: 'ready', scenario, options, response } }])
     })
   }
-  async select(id: string, token: string, selectedOption: OptionId) {
+  async select(id: string, token: string, selectedOption: OptionId, rankingRubric: DecisionRubric = defaultRubric()) {
     return this.retry(async () => {
       const row = await this.store.get<Journey>(`session-${id}`)
       if (!row) throw new WorkshopError(404, 'SESSION_NOT_FOUND', 'Session not found.')
       this.assertOwned(row.value, token)
       if (row.value.state === 'complete' && row.value.ranking) {
         if (row.value.selectedOption !== selectedOption) throw new WorkshopError(409, 'ALREADY_RANKED', 'This journey has already been ranked for your original choice.')
+        if (JSON.stringify(row.value.rankingRubric ?? defaultRubric()) !== JSON.stringify(rankingRubric)) {
+          throw new WorkshopError(409, 'ALREADY_RANKED', 'This journey has already been ranked with a different rubric.')
+        }
         return { journey: row.value, cached: row.value.ranking }
       }
       if (row.value.state !== 'ready') throw new WorkshopError(409, 'INTERRUPTED', 'Ranking is already running or was interrupted.', 5)
@@ -122,7 +127,7 @@ export class Workshop {
       if (!browser) throw new WorkshopError(401, 'IDENTITY_REQUIRED', 'Please refresh the workshop.')
       if (browser.value.busyUntil > this.now()) throw new WorkshopError(429, 'IN_PROGRESS', 'One operation is already running.', 5)
       await this.store.commit([
-        { key: `session-${id}`, version: row.version, value: { ...row.value, state: 'ranking', selectedOption } },
+        { key: `session-${id}`, version: row.version, value: { ...row.value, state: 'ranking', selectedOption, rankingRubric } },
         { key: browserKey(token), version: browser.version, value: { ...browser.value, busyUntil: this.now() + 120_000, busyId: id } },
       ])
       return { journey: row.value, cached: undefined }
