@@ -292,6 +292,9 @@
     .keyboard-table { display: grid; grid-template-columns: 145px 1fr; gap: 14px; font-size: 15px; line-height: 1.5; }
     kbd { font-family: var(--cp-mono); color: var(--cp-accent); }
     .help-note { margin-top: 24px; border-top: 1px solid var(--cp-border); padding-top: 18px; color: var(--cp-text-muted); font-size: 14px; line-height: 1.6; }
+    .join-content { text-align: center; }
+    .join-qr { display: block; width: min(360px, 100%); height: auto; margin: 0 auto 20px; }
+    .join-link { display: inline-block; overflow-wrap: anywhere; font-family: var(--cp-mono); font-size: 14px; line-height: 1.6; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .status { position: fixed; bottom: 80px; left: 24px; z-index: 10; padding: 12px 16px; background: var(--cp-panel-strong); border: 1px solid var(--cp-warning); max-width: 80vw; font-size: 14px; }
     @keyframes enter { from { opacity: .35; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -433,7 +436,7 @@
   <header class="topbar">
     <a class="brand" href="#slide-1" aria-label="The Decision Room, first slide">THE DECISION<span> ROOM.</span></a>
     <span class="event">SKILL UP FORUM / ATHENS 2026</span>
-    <span class="tag">HUMAN JUDGMENT / AI JUDGMENT</span>
+    <button class="control" id="join-button" type="button" aria-haspopup="dialog" aria-controls="join-dialog">Join workshop / QR</button>
   </header>
 
   <main id="deck" aria-label="The Decision Room presentation">
@@ -780,7 +783,7 @@
         <p class="note-cue">REFERENCE ONLY / NO PLANNED TALK TIME</p>
         <p>Use this appendix for audience questions or sharing after the session. Each research slide also links directly to its source.</p>
         <p>The first ten slides total thirteen minutes including brief audience pauses, excluding the live demo. Return afterwards for the two-minute technical bridge and ninety-second Action Items: twelve main slides, sixteen and a half minutes of planned talk time in total. For a ten-minute opening, skip slide 2, shorten the Air Canada case and discuss the rubric during the demo.</p>
-        <p>Publishing: the Deploy presentation to GitHub Pages workflow publishes only this file. Push changes under docs/ or to .github/workflows/deploy-pages.yml to main to redeploy, or run the workflow manually from the Actions tab on main. Repository Pages settings must use GitHub Actions as the source. Local edits are not published until committed and pushed.</p>
+        <p>Publishing: the Deploy presentation to GitHub Pages workflow publishes this file and the workshop QR image. Push changes under docs/ or to .github/workflows/deploy-pages.yml to main to redeploy, or run the workflow manually from the Actions tab on main. Repository Pages settings must use GitHub Actions as the source. Local edits are not published until committed and pushed.</p>
       </template>
     </section>
   </main>
@@ -822,6 +825,16 @@
     </div>
     <p class="help-note">Share a specific slide using its URL, for example <code>#slide-4</code>. Swipe horizontally on touch devices. To use the light theme, append <code>?scoutTheme=light</code> before the slide hash. The deck defaults to the workshop's dark theme.</p>
     <p class="help-note">GitHub Pages hosts this presentation only. The live workshop needs its own backend hosting. External source links require an internet connection; slides, notes and controls do not.</p>
+  </dialog>
+  <dialog id="join-dialog" aria-labelledby="join-title" aria-describedby="join-description">
+    <div class="dialog-header"><div><h2 id="join-title">Your turn to decide.</h2><p id="join-description">Scan with your phone camera to open the live workshop.</p></div><button class="control" data-close type="button" aria-label="Close workshop QR code">&times;</button></div>
+    <div class="join-content">
+      <a href="https://app-decision-room-ralexiou-04dbd6.azurewebsites.net/" target="_blank" rel="noopener noreferrer" aria-label="Open The Decision Room workshop in a new tab">
+        <img class="join-qr" src="workshop-qr.png" width="492" height="492" alt="QR code linking to The Decision Room attendee app">
+      </a>
+      <p><a class="join-link" href="https://app-decision-room-ralexiou-04dbd6.azurewebsites.net/" target="_blank" rel="noopener noreferrer">app-decision-room-ralexiou-04dbd6.azurewebsites.net &#8599;</a></p>
+      <p class="help-note">Already on your phone? Tap the link above. The workshop requires an internet connection. Do not enter personal or confidential information.</p>
+    </div>
   </dialog>
   <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
   <p class="status" id="status" role="alert" hidden></p>
@@ -942,6 +955,7 @@
       document.getElementById("notes-close").addEventListener("click", () => toggleNotes(false));
       document.getElementById("overview-button").addEventListener("click", () => overview.showModal());
       document.getElementById("help-button").addEventListener("click", () => help.showModal());
+      document.getElementById("join-button").addEventListener("click", () => document.getElementById("join-dialog").showModal());
       fullscreenButton.addEventListener("click", toggleFullscreen);
       document.querySelectorAll("[data-close]").forEach(button => {
         button.addEventListener("click", () => button.closest("dialog").close());

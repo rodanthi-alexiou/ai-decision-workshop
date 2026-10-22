@@ -39,6 +39,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/presentation"
           cp docs/index.html "$RUNNER_TEMP/presentation/index.html"
+          cp docs/workshop-qr.png "$RUNNER_TEMP/presentation/workshop-qr.png"
 
       - name: Upload presentation
         uses: actions/upload-pages-artifact@v3

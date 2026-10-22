@@ -16,6 +16,8 @@ Attendee app: <https://app-decision-room-ralexiou-04dbd6.azurewebsites.net/>. `/
 - Dedicated LRS storage: `stdecisionroom04dbd6`, table `workshop`.
 - Dedicated VNet: `vnet-decision-workshop`, integration and private-endpoint subnets; private endpoint `pe-decision-workshop-table`.
 
+The presentation's **Join workshop / QR** button opens a scannable QR code and a clickable link to the attendee app, available from every slide. `docs/workshop-qr.png` encodes the attendee app URL above, not the presentation URL. The Pages workflow publishes both the presentation and the QR image. If the attendee hostname changes, regenerate the QR image and update both links in `docs/index.html` before publishing. The image is served locally by Pages, without an external QR service.
+
 ## Initial setup
 
 Sign into Azure CLI using an account permitted to create hosting resources and assign resource-scoped roles:
